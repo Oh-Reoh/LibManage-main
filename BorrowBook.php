@@ -81,12 +81,12 @@ $conn->close();
     
     <div class="dboard_content">
         <section id="sidebar">
-            <a href="Dashboard(Librarian).php" class="brand">
+            <a href="Dashboard(Reader).php" class="brand">
                 <img src="images/logo_ra.png" alt="Logo Icon" class="logo"> <p>Libmanage</p>
             </a>
             <ul class="side-menu">
                 <li>
-                    <a href="Dashboard(Librarian).php" class="active">
+                    <a href="Dashboard(Reader).php" class="active">
                         <img src="images/dashboard_icon.png" alt="Dashboard Icon" class="icon"> Dashboard
                     </a>
                 </li>
@@ -117,7 +117,6 @@ $conn->close();
                         <i class='bx bx-search icon' ></i>
                     </div>
                 </form>
-                <button class="add-book-btn">Add Book</button>
                 <a href="BorrowBook.php">
 				<button class="add-book-btn">Borrow a Book</button>
 			    </a>

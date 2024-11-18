@@ -1,60 +1,57 @@
 <?php
 session_start();
-include 'function.php'; // Include database connection
+include 'function.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'login') {
-    $username = isset($_POST['username']) ? $_POST['username'] : '';
-    $password = isset($_POST['password']) ? $_POST['password'] : '';
+    $username = $_POST['username'] ?? '';
+    $password = $_POST['password'] ?? '';
 
-    // Check if username and password are not empty
+    // Validate input
     if (empty($username) || empty($password)) {
         $_SESSION['error_message'] = 'Please fill in all required fields.';
         header('Location: LoginPage.php');
         exit();
     }
 
-    // Prepare SQL statement to avoid SQL injection
+    // Query the user from the database
     $stmt = $conn->prepare("SELECT * FROM tbl_userinfo WHERE username = ?");
-    if (!$stmt) {
-        $_SESSION['error_message'] = 'Database error. Please try again later.' . $conn->error;
-        header('Location: LoginPage.php');
-        exit();
-    }
-
     $stmt->bind_param("s", $username);
     $stmt->execute();
     $result = $stmt->get_result();
-    
-    // Verify password if username exists
+
     if ($result->num_rows > 0) {
         $user = $result->fetch_assoc();
 
-        // Verify the password against the hash
+        // Verify password
         if (password_verify($password, $user['password'])) {
+            // Set session variables
             $_SESSION['success_message'] = 'Login successful!';
-            $_SESSION['username'] = $username; // Store session for logged-in user
-            $_SESSION['role'] = $user['role']; // Store user role in session
+            $_SESSION['username'] = $user['username'];
+            $_SESSION['role'] = $user['role'];
 
-            // Redirect based on user role
-            if ($_SESSION['role'] == 'librarian') {
-                header('Location: Dashboard(Librarian).php'); // Redirect to Librarian Dashboard
-            } else if ($_SESSION['role'] == 'regular') {
-                header('Location: Dashboard(Reader).php'); // Redirect to Reader Dashboard
+            // Role-based redirection
+            if ($user['role'] === 'librarian') {
+                header('Location: Dashboard(Librarian).php');
+                exit(); // Stop further execution
+            } elseif ($user['role'] === 'regular') {
+                header('Location: Dashboard(Reader).php');
+                exit(); // Stop further execution
             } else {
-                $_SESSION['error_message'] = 'Role not recognized. Please contact support.';
+                $_SESSION['error_message'] = 'Unknown role. Please contact support.';
                 header('Location: LoginPage.php');
                 exit();
             }
-            exit();
         } else {
-            $_SESSION['error_message'] = 'Incorrect username or password.';
+            $_SESSION['error_message'] = 'Password is incorrect for the provided username.';
         }
     } else {
-        $_SESSION['error_message'] = 'Incorrect username or password.';
+        $_SESSION['error_message'] = 'Username not found in the database.';
     }
 
     $stmt->close();
-    header('Location: LoginPage.php'); // Redirect back to login page if authentication fails
+
+    // Redirect back to login on failure
+    header('Location: LoginPage.php');
     exit();
 }
 ?>

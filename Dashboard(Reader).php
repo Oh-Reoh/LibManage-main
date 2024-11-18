@@ -18,12 +18,12 @@
 	<div class="dboard_content">
 		<!-- SIDEBAR -->
 	<section id="sidebar">
-		<a href="Dashboard(Librarian).html" class="brand">
+		<a href="Dashboard(Reader).php" class="brand">
 			<img src="images/logo_ra.png" alt="Logo Icon" class="logo"> <p>Libmanage</p>
 		</a>
 		<ul class="side-menu">
 			<li>
-				<a href="Dashboard(Librarian).html" class="active">
+				<a href="Dashboard(Reader).php" class="active">
 					<img src="images/dashboard_icon.png" alt="Dashboard Icon" class="icon"> Dashboard
 				</a>
 			</li>
@@ -35,7 +35,7 @@
 			</li>
 
 			<li>
-				<a href="Reader'sRequest(Librarian).html" class="active">
+				<a href="Reader'sRequest(Librarian).php" class="active">
 					<img src="images/readers_request_icon.png" alt="Dashboard Icon" class="icon-therest"> Requests
 				</a>
 			</li>
@@ -122,124 +122,70 @@
 
 
 			<div class="data">
+		<div class="container">
+			<div class="table-wrapper">
+				<div class="content-data">
+					<div class="head">
+						<h3>List of books</h3>
+						<div class="menu">
+							<i class='bx bx-dots-horizontal-rounded icon'></i>
+							<ul class="menu-link">
+								<li><a href="#">Edit</a></li>
+								<li><a href="#">Save</a></li>
+								<li><a href="#">Remove</a></li>
+							</ul>
+						</div>
+					</div>
 
-
-
-
-				<div class="container">
-					<div class="table-wrapper">
-						<div class="content-data">
-							<div class="head">
-								<h3>List of books</h3>
-								<div class="menu">
-									<i class='bx bx-dots-horizontal-rounded icon'></i>
-									<ul class="menu-link">
-										<li><a href="#">Edit</a></li>
-										<li><a href="#">Save</a></li>
-										<li><a href="#">Remove</a></li>
-									</ul>
-								</div>
-							</div>
-
+					<div class="container">
+						<div class="table-wrapper">
 							<table>
 								<thead>
 									<tr>
 										<th>BOOK NAME</th>
 										<th>AUTHOR</th>
 										<th>BOOK STATUS</th>
-										<th>NUMBER</th>
-										<th>ISSUED DATE</th>
-										<th>RETURN DATE</th>
+										<th>ID</th>
+										<th>REGISTERED DATE</th>
 									</tr>
 								</thead>
 								<tbody>
-									<tr>
-										<td><a href="book1.html">The Wizard of OZ</a></td>
-										<td>L. Frank Baum</td>
-										<td>On shelf</td>
-										<td>1</td>
-										<td>-</td>
-										<td>-</td>
-									</tr>
-									<tr>
-										<td><a href="book2.html">Harry Potter and the Goblet of Fire</a></td>
-										<td>J. K. Rowling</td>
-										<td>On shelf</td>
-										<td>2</td>
-										<td>-</td>
-										<td>-</td>
-									</tr>
-									<tr>
-										<td><a href="book3.html">Stranger Things</a></td>
-										<td>Matt and Ross Duffer</td>
-										<td>On shelf</td>
-										<td>3</td>
-										<td>-</td>
-										<td>-</td>
-									</tr>
-									<tr>
-										<td><a href="book4.html">Life of Pi</a></td>
-										<td>Yann Martel</td>
-										<td>On shelf</td>
-										<td>4</td>
-										<td>-</td>
-										<td>-</td>
-									</tr>
-									<tr>
-										<td><a href="book5.html">The Hunger Games</a></td>
-										<td>Suzanne Collins</td>
-										<td>On shelf</td>
-										<td>5</td>
-										<td>-</td>
-										<td>-</td>
-									</tr>
-									<tr>
-										<td><a href="book6.html">The Lord of the Rings</a></td>
-										<td>J.R.R. Tolkien</td>
-										<td>On shelf</td>
-										<td>6</td>
-										<td>-</td>
-										<td>-</td>
-									</tr>
-									<tr>
-										<td><a href="book7.html">Goldilocks and the three bears</a></td>
-										<td>James Marshall</td>
-										<td>On shelf</td>
-										<td>7</td>
-										<td>-</td>
-										<td>-</td>
-									</tr>
-									<tr>
-										<td><a href="book8.html">Pinocchio</a></td>
-										<td>Carlo Collodi</td>
-										<td>On shelf</td>
-										<td>8</td>
-										<td>-</td>
-										<td>-</td>
-									</tr>
-									<tr>
-										<td><a href="book9.html">Peter Pan</a></td>
-										<td>J. M. Barrie</td>
-										<td>On shelf</td>
-										<td>9</td>
-										<td>-</td>
-										<td>-</td>
-									</tr>
-									<tr>
-										<td><a href="book10.html">The Lion king</a></td>
-										<td>Walt Disney Company</td>
-										<td>On shelf</td>
-										<td>10</td>
-										<td>-</td>
-										<td>-</td>
-									</tr>
+									<?php
+									// Include the database connection
+									$db_connect_file = 'db_connect.php'; // Ensure this file exists
+									if (file_exists($db_connect_file)) {
+										include $db_connect_file;
+
+										// Fetch all books from tbl_bookinfo
+										$stmt = $pdo->query("SELECT id, bookname, author, 
+											CASE 
+												WHEN isinuse = 1 THEN 'Borrowed' 
+												ELSE 'On Shelf' 
+											END AS book_status,
+											DATE_FORMAT(issueddate, '%Y-%m-%d') AS formatted_issueddate 
+											FROM tbl_bookinfo");
+										while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+											echo "<tr>
+													<td><a href='book{$row['id']}.php'>" . htmlspecialchars($row['bookname']) . "</a></td>
+													<td>" . htmlspecialchars($row['author']) . "</td>
+													<td>" . $row['book_status'] . "</td>
+													<td>" . $row['id'] . "</td>
+													<td>" . $row['formatted_issueddate'] . "</td>
+												</tr>";
+										}
+									} else {
+										echo "<tr><td colspan='5'>Database connection file not found.</td></tr>";
+									}
+									?>
 								</tbody>
 							</table>
-
-						</div>						
+						</div>
 					</div>
-				</div>
+				</div>                        
 			</div>
+		</div>
+	</div>
+
 		</main>
 		<!-- MAIN -->
 	</section>

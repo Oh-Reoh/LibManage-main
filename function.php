@@ -1,5 +1,5 @@
 <?php
-// Start the session if it hasn't been started
+// Initialize session if not already started
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -7,53 +7,88 @@ if (session_status() === PHP_SESSION_NONE) {
 // Database connection
 $conn = mysqli_connect("localhost", "root", "", "libmanagedb");
 if (!$conn) {
-    die("Connection failed: " . mysqli_connect_error());
+    die("Database connection failed: " . mysqli_connect_error());
 }
 
-if (isset($_POST["action"])) {
-    if ($_POST["action"] == "register") {
-        // Call register function here if implemented
-    } elseif ($_POST["action"] == "login") {
-        login();
-    }
-}
-
-// LOGIN
-function login() {
+/**
+ * Authenticate a user by username and password.
+ *
+ * @param string $username The username input.
+ * @param string $password The plaintext password input.
+ * @return array|false Returns user details on success or false on failure.
+ */
+function authenticateUser($username, $password) {
     global $conn;
 
-    // Retrieve username and password
-    $username = mysqli_real_escape_string($conn, $_POST["username"]);
-    $password = $_POST["password"];  // User-entered password
+    // Use a prepared statement for security
+    $stmt = $conn->prepare("SELECT * FROM tbl_userinfo WHERE username = ?");
+    $stmt->bind_param("s", $username);
+    $stmt->execute();
+    $result = $stmt->get_result();
 
-    // Check if user exists in tbl_userinfo
-    $userQuery = "SELECT * FROM tbl_userinfo WHERE username = '$username'";
-    $userResult = mysqli_query($conn, $userQuery);
+    if ($result->num_rows > 0) {
+        $user = $result->fetch_assoc();
+        $stmt->close();
 
-    if (mysqli_num_rows($userResult) > 0) {
-        $user = mysqli_fetch_assoc($userResult);
-
-        // Verify password using password_verify() since stored password is hashed
+        // Verify the password
         if (password_verify($password, $user['password'])) {
-            // Successful login
-            $_SESSION["login"] = true;
-            $_SESSION["username"] = $user["username"];
-            $_SESSION["id"] = $user["id"];
-            $_SESSION["department"] = $user["department"];  // Assuming department column exists
-            echo "Login Successful";  // For debugging or AJAX purposes
-            header("Location: Dashboard(Librarian).php");  // Redirect to dashboard
-            exit();
-        } else {
-            // Wrong password
-            $_SESSION["error_message"] = "Incorrect password. Please try again.";
-            header("Location: loginPage.php");
-            exit();
+            return $user; // Successful authentication
         }
+    }
+
+    $stmt->close();
+    return false; // Authentication failed
+}
+
+/**
+ * Login a user by setting session variables.
+ *
+ * @param array $user The authenticated user data.
+ */
+function loginUser($user) {
+    $_SESSION["login"] = true;
+    $_SESSION["username"] = $user["username"];
+    $_SESSION["id"] = $user["id"];
+    $_SESSION["department"] = $user["department"];
+    $_SESSION["role"] = $user["role"];
+}
+
+/**
+ * Handle login action.
+ */
+function handleLogin() {
+    global $conn;
+
+    $username = $_POST['username'] ?? '';
+    $password = $_POST['password'] ?? '';
+
+    // Basic input validation
+    if (empty($username) || empty($password)) {
+        $_SESSION["error_message"] = "Please enter both username and password.";
+        header("Location: loginPage.php");
+        exit();
+    }
+
+    // Authenticate the user
+    $user = authenticateUser($username, $password);
+
+    if ($user) {
+        loginUser($user);
+
+        // Redirect based on role
+        if ($user["role"] === "librarian") {
+            header("Location: Dashboard(Librarian).php");
+        } else {
+            header("Location: Dashboard(Reader).php");
+        }
+        exit();
     } else {
-        // User not found
-        $_SESSION["error_message"] = "User not registered. Please sign up.";
+        // Login failed
+        $_SESSION["error_message"] = "Incorrect username or password.";
         header("Location: loginPage.php");
         exit();
     }
 }
+
+// End of PHP script
 ?>

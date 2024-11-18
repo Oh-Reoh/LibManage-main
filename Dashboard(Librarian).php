@@ -73,10 +73,6 @@
 				<button class="add-book-btn">Add Book</button>
 			</a>
 
-			<a href="BorrowBook.php">
-				<button class="add-book-btn">Borrow a Book</button>
-			</a>
-
 			
 			<a href="#" class="nav-link">
 				<i class='bx bxs-bell icon' ></i>
@@ -140,14 +136,12 @@
 					</div>
 				</div>
 			</div>
-			<!-- INFO DATA -->			
-						
-
-
+			<!-- INFO DATA -->
 			<div class="data">
+				<!-- Readers List -->
 				<div class="content-data">
 					<div class="head">
-						<h3>Readers list</h3>
+						<h3>Readers List</h3>
 						<div class="menu">
 							<i class='bx bx-dots-horizontal-rounded icon'></i>
 							<ul class="menu-link">
@@ -158,26 +152,64 @@
 						</div>
 					</div>
 
+					<div class="container">
+						<div class="table-wrapper">
+							<table>
+								<thead>
+									<tr>
+										<th>ID</th>
+										<th>USERNAME</th>
+										<th>EMAIL</th>
+										<th>DEPARTMENT</th>
+										<th>ROLE</th>
+									</tr>
+								</thead>
+								<tbody>
+									<?php
+									// Database connection
+									$host = 'localhost'; // your host
+									$dbname = 'libmanagedb'; // your database name
+									$username = 'root'; // your username
+									$password = ''; // your password
+
+									// Create a PDO instance
+									$pdo = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
+									$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+									// Query to select all users from the database
+									$stmt = $pdo->query("SELECT * FROM tbl_userinfo");
+									while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+										echo "<tr>
+												<td>{$row['id']}</td>
+												<td>{$row['username']}</td>
+												<td>{$row['email']}</td>
+												<td>{$row['department']}</td>
+												<td>{$row['role']}</td>
+											</tr>";
+									}
+									?>
+								</tbody>
+							</table>
+						</div>
+					</div>
 				</div>
-				<div class="container">
-					<div class="table-wrapper">
-						<div class="content-data">
-							<div class="head">
-								<h3>List of books</h3>
-								<button class="add-book-btn" style="background: green; position: absolute; margin: 0 auto; transform: translateX(500px);">
-									Export Excel
-								</button>
 
-								<div class="menu">
-									<i class='bx bx-dots-horizontal-rounded icon'></i>
-									<ul class="menu-link">
-										<li><a href="#">Edit</a></li>
-										<li><a href="#">Save</a></li>
-										<li><a href="#">Remove</a></li>
-									</ul>
-								</div>
-							</div>
+				<!-- Books List -->
+				<div class="content-data">
+					<div class="head">
+						<h3>List of Books</h3>
+						<div class="menu">
+							<i class='bx bx-dots-horizontal-rounded icon'></i>
+							<ul class="menu-link">
+								<li><a href="#">Edit</a></li>
+								<li><a href="#">Save</a></li>
+								<li><a href="#">Remove</a></li>
+							</ul>
+						</div>
+					</div>
 
+					<div class="container">
+						<div class="table-wrapper">
 							<table>
 								<thead>
 									<tr>
@@ -186,42 +218,29 @@
 										<th>BOOK STATUS</th>
 										<th>NUMBER</th>
 										<th style="font-size: 15px">REGISTERED DATE</th>
-										<!-- <th>RETURN DATE</th> -->
 									</tr>
 								</thead>
 								<tbody>
 									<?php
-										// Database connection
-										$host = 'localhost'; // your host
-										$dbname = 'libmanagedb'; // your database name
-										$username = 'root'; // your username
-										$password = ''; // your password
-
-										// Create a PDO instance
-										$pdo = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
-										$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
-										// Query to select all books from the database
-										$stmt = $pdo->query("SELECT *, DATE_FORMAT(issueddate, '%Y-%m-%d') AS formatted_issueddate
-										FROM tbl_bookinfo;
-										");
-										while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-											echo "<tr>
-													<td><a href='book{$row['id']}.php'>{$row['bookname']}</a></td>
-													<td>{$row['author']}</td>
-													<td>on shelf</td>
-													<td>{$row['id']}</td>
-													<td>{$row['formatted_issueddate']}</td>
-												</tr>";
-										}
+									// Query to select all books from the database
+									$stmt = $pdo->query("SELECT *, DATE_FORMAT(issueddate, '%Y-%m-%d') AS formatted_issueddate FROM tbl_bookinfo");
+									while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+										echo "<tr>
+												<td><a href='book{$row['id']}.php'>{$row['bookname']}</a></td>
+												<td>{$row['author']}</td>
+												<td>on shelf</td>
+												<td>{$row['id']}</td>
+												<td>{$row['formatted_issueddate']}</td>
+											</tr>";
+									}
 									?>
 								</tbody>
 							</table>
-
-						</div>						
+						</div>
 					</div>
 				</div>
 			</div>
+
 			<!-- MAIN -->
 
 		</main>

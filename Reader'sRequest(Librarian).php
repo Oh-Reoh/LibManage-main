@@ -70,7 +70,7 @@
 			</form>
     
 			<!-- Add Book Button -->
-			<button class="add-book-btn">Add Book</button>
+			<button class="add-book-btn"></button>
 			
 			<a href="#" class="nav-link">
 				<i class='bx bxs-bell icon' ></i>
