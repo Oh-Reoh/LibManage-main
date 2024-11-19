@@ -166,7 +166,7 @@
 											FROM tbl_bookinfo");
 										while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 											echo "<tr>
-													<td><a href='book{$row['id']}.php'>" . htmlspecialchars($row['bookname']) . "</a></td>
+													<td><a href='books/	book{$row['id']}.php'>" . htmlspecialchars($row['bookname']) . "</a></td>
 													<td>" . htmlspecialchars($row['author']) . "</td>
 													<td>" . $row['book_status'] . "</td>
 													<td>" . $row['id'] . "</td>

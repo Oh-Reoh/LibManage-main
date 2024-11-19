@@ -225,12 +225,18 @@
 									// Query to select all books from the database
 									$stmt = $pdo->query("SELECT *, DATE_FORMAT(issueddate, '%Y-%m-%d') AS formatted_issueddate FROM tbl_bookinfo");
 									while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+										// Ensure output is sanitized
+										$bookId = htmlspecialchars($row['id']);
+										$bookName = htmlspecialchars($row['bookname']);
+										$author = htmlspecialchars($row['author']);
+										$issuedDate = htmlspecialchars($row['formatted_issueddate']);
+										
 										echo "<tr>
-												<td><a href='book{$row['id']}.php'>{$row['bookname']}</a></td>
-												<td>{$row['author']}</td>
+												<td><a href='books/book{$bookId}.php'>{$bookName}</a></td>
+												<td>{$author}</td>
 												<td>on shelf</td>
-												<td>{$row['id']}</td>
-												<td>{$row['formatted_issueddate']}</td>
+												<td>{$bookId}</td>
+												<td>{$issuedDate}</td>
 											</tr>";
 									}
 									?>

@@ -4,6 +4,7 @@ $username = "root";
 $password = "";
 $dbname = "libmanagedb";
 
+// Establish database connection
 $conn = new mysqli($servername, $username, $password, $dbname);
 
 // Check connection
@@ -11,34 +12,123 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-// Insert book into database if the form is submitted
+// List of allowed genres (case-insensitive)
+$allowedGenres = [
+    "Fantasy", "Science Fiction", "Dystopian", "Mystery", "Horror", "Thriller",
+    "Historical Fiction", "Romance", "Contemporary Fiction", "Literary Fiction",
+    "Magical Realism", "Graphic Novels", "Short Stories", "Young Adult (YA)",
+    "New Adult (NA)", "Children's", "Middle Grade", "Non-Fiction",
+    "Biography/Autobiography", "History", "Science & Nature", "Technology",
+    "Self-Help", "Health & Wellness", "Cookbooks", "Art & Photography",
+    "Travel", "Business & Economics", "Religion & Spirituality", "True Crime",
+    "Humor", "Adventure", "Action", "Science", "Nature", "Novel"
+];
+
+// Handle form submission
 if (isset($_POST['submit'])) {
     $bookname = htmlspecialchars($_POST['bookname']);
     $author = htmlspecialchars($_POST['author']);
-    $issueddate = date('Y-m-d'); // Format the current date as 'YYYY-MM-DD'
+    $bookNumber = htmlspecialchars($_POST['bookNumber']);
+    $publishYear = intval($_POST['publishYear']);
+    $genreInput = htmlspecialchars($_POST['genre']);
+    $description = htmlspecialchars($_POST['description']);
+    $issueddate = date('Y-m-d'); // Current date
+    $isinuse = 0; // Default: book is not in use
 
-    // Prepare the SQL statement to insert book data into the table
-    $stmt = $conn->prepare("INSERT INTO tbl_bookinfo (bookname, author, issueddate) VALUES (?, ?, ?)");
-    
-    // Check if the statement is prepared successfully
-    if ($stmt) {
-        $stmt->bind_param("sss", $bookname, $author, $issueddate); // Bind the bookname, author, and issueddate variables
+    // Validate genres
+    $genres = array_map('trim', explode(',', strtolower($genreInput))); // Split and lower case
+    $invalidGenres = array_diff($genres, array_map('strtolower', $allowedGenres));
 
-        // Execute the statement and check if the insertion was successful
-        if ($stmt->execute()) {
-            echo "<script type='text/javascript'>alert('New book registered successfully!');</script>";
-        } else {
-            echo "<script type='text/javascript'>alert('Error: " . $stmt->error . "');</script>";
-        }
-
-        // Close the prepared statement
-        $stmt->close();
+    if ($publishYear > date('Y')) {
+        echo "<script>alert('This year hasn\\'t come out yet. Try Again.');</script>";
+    } elseif (!empty($invalidGenres)) {
+        echo "<script>alert('Invalid genre(s): " . implode(', ', $invalidGenres) . ". Try Again.');</script>";
     } else {
-        echo "<script type='text/javascript'>alert('Error preparing the statement: " . $conn->error . "');</script>";
+        // Check for duplicate bookNumber
+        $checkStmt = $conn->prepare("SELECT COUNT(*) FROM tbl_bookinfo WHERE bookNumber = ?");
+        $checkStmt->bind_param("s", $bookNumber);
+        $checkStmt->execute();
+        $checkStmt->bind_result($count);
+        $checkStmt->fetch();
+        $checkStmt->close();
+
+        if ($count > 0) {
+            echo "<script>alert('Book Number already exists. Please use a unique Book Number.');</script>";
+        } else {
+            // Handle image upload
+            $image = 'blankimg.png'; // Default image
+            if (isset($_FILES['image']) && $_FILES['image']['error'] == UPLOAD_ERR_OK) {
+                $targetDir = "images/";
+                $imageName = basename($_FILES['image']['name']);
+                $targetFilePath = $targetDir . $imageName;
+
+                if (move_uploaded_file($_FILES['image']['tmp_name'], $targetFilePath)) {
+                    $image = $imageName;
+                } else {
+                    echo "<script>alert('Error uploading image. Default image will be used.');</script>";
+                }
+            }
+
+            // Insert into database
+            $stmt = $conn->prepare("INSERT INTO tbl_bookinfo (bookname, author, bookNumber, publishYear, genre, description, issueddate, isinuse, image) 
+                                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            if ($stmt) {
+                $stmt->bind_param("sssisssis", $bookname, $author, $bookNumber, $publishYear, $genreInput, $description, $issueddate, $isinuse, $image);
+
+                if ($stmt->execute()) {
+                    $bookId = $stmt->insert_id;
+                    generateBookFiles($bookId, $bookname, $author, $image, $description, $publishYear, $genres);
+                    
+                    // Redirect to dashboard
+                    header("Location: Dashboard(Librarian).php");
+                    exit();
+                } else {
+                    echo "<script>alert('Error: " . $stmt->error . "');</script>";
+                }
+
+                $stmt->close();
+            } else {
+                echo "<script>alert('Error preparing the statement: " . $conn->error . "');</script>";
+            }
+        }
     }
 }
 
+// Close the database connection
 $conn->close();
+
+/**
+ * Generate PHP and CSS files for the new book.
+ */
+function generateBookFiles($id, $name, $author, $image, $description, $year, $genres, $bookNumber) {
+    $templatePath = 'templates/booktemplate.php';
+    $cssTemplatePath = 'templates/booktemplate.css';
+    $outputPath = "books/book$id.php";
+    $cssOutputPath = "books/book$id.css";
+
+    if (!file_exists($templatePath)) {
+        echo "<script>alert('Error: Book template not found.');</script>";
+        return;
+    }
+
+    // Replace placeholders in the PHP template
+    $bookTemplate = file_get_contents($templatePath);
+    $bookTemplate = str_replace(
+        ['{{ID}}', '{{NAME}}', '{{AUTHOR}}', '{{IMAGE}}', '{{DESCRIPTION}}', '{{YEAR}}', '{{GENRES}}', '{{BOOKNUMBER}}'],
+        [$id, $name, $author, $image, $description, $year, implode(', ', $genres), $bookNumber],
+        $bookTemplate
+    );
+
+    // Write the PHP file
+    if (file_put_contents($outputPath, $bookTemplate) === false) {
+        echo "<script>alert('Error generating book PHP file.');</script>";
+    }
+
+    // Copy CSS template
+    if (file_exists($cssTemplatePath)) {
+        copy($cssTemplatePath, $cssOutputPath);
+    }
+}
 ?>
 
 
@@ -93,7 +183,6 @@ $conn->close();
                         <i class='bx bx-search icon' ></i>
                     </div>
                 </form>
-                <button class="add-book-btn">Add Book</button>
                 <a href="#" class="nav-link">
                     <i class='bx bxs-bell icon' ></i>
                     <span class="badge">5</span>
@@ -111,16 +200,41 @@ $conn->close();
 
             <main>
                 <div class="book-registration">
-                    <h2>Add A New Book</h2>
-                    <form action="AddBook.php" method="POST">
-                        <label for="bookname">Book Name</label>
-                        <input type="text" id="bookname" name="bookname" placeholder="Enter the book name" required>
-
-                        <label for="author">Author</label>
-                        <input type="text" id="author" name="author" placeholder="Enter the author's name" required>
-
-                        <button type="submit" name="submit">Register Book</button>
-                    </form>
+                    <div class="head">
+                        <h2>Add A New Book</h2>
+                        <form action="AddBook.php" method="POST" enctype="multipart/form-data">
+                        <br><br>
+                            <label for="image">Upload Book Image</label>
+                            <br><br>
+                            <input type="file" id="image" name="image" accept="image/*">
+                            <br><br>
+                            <label for="bookname">Book Name</label>
+                            <br><br>
+                            <input type="text" id="bookname" name="bookname" placeholder="Enter the book name" required>
+                            <br><br>
+                            <label for="author">Author</label>
+                            <br><br>
+                            <input type="text" id="author" name="author" placeholder="Enter the author's name" required>
+                            <br><br>
+                            <label for="bookNumber">Book Number</label>
+                            <br><br>
+                            <input type="text" id="bookNumber" name="bookNumber" placeholder="Enter the book number" required>
+                            <br><br>
+                            <label for="publishYear">Publish Year</label>
+                            <br><br>
+                            <input type="number" id="publishYear" name="publishYear" placeholder="Enter the publish year" required>
+                            <br><br>
+                            <label for="genre">Genre</label>
+                            <br><br>
+                            <input type="text" id="genre" name="genre" placeholder="Enter genres (comma-separated)" required>
+                            <br><br>
+                            <label for="description">Description</label>
+                            <br><br>
+                            <textarea id="description" name="description" placeholder="Enter a brief description" required></textarea>
+                            <br><br>
+                            <button type="submit" name="submit">Register Book</button>
+                        </form>
+                    </div>    
                 </div>
             </main>
         </section>

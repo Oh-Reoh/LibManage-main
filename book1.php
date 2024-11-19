@@ -69,9 +69,7 @@
 				</div>
 			</form>
 
-    
-			<!-- Add Book Button -->
-			<button class="add-book-btn">Add Book</button>
+
 			
 			<a href="#" class="nav-link">
 				<i class='bx bxs-bell icon' ></i>
@@ -91,7 +89,7 @@
 
         <!-- MAIN -->
         <main>
-            <h1 class="title"><a href="booklist(Librarian).php"> Books </a>>> The Wizard of OZ</h1>
+            <h1 class="title"><a href="booklist(Librarian).php"> Books </a>>> BOOK TITLE HERE </h1>
             <div class="data">
                 <!-- Left Column -->
                 <div class="left-column">
@@ -114,11 +112,13 @@
                                     <span class="label">Book Number:</span>
                                     <span class="value">1</span>
                                 </div>
-                            </div>                    
-                            
+                            </div> 
+                            <!-- ADD BOOK STATUS HERE IF ITS BORROWED OR AVAILABLE -->
+
+
                             <!-- Book Image (Right Side) -->
                             <div class="book-image">
-                                <img src="images/OZ_info.png" alt="Book Image">
+                                <img src="images/OZ_info.png" alt="Book Image"> <!-- PUT THE UPLOADED IMAGE HERE -->
                             </div>
                         </div>
                     </div>
@@ -137,14 +137,14 @@
                 <div class="right-column">
                     <div class="content-data book-overview">
                         <div class="book-overview-content">
-                            <!-- Book Cover Image -->
+                            <!-- Book Cover Image HERE -->
                             <img src="images/OZ_overview.png" alt="The Wizard of Oz Cover" class="book-cover">
                     
-                            <!-- Book Title and Author -->
+                            <!-- Book Title and Author HERE -->
                             <h2 class="book-title">The Wizard of OZ</h2>
                             <p class="book-author">L. Frank Baum</p>
                     
-                            <!-- Book Description -->
+                            <!-- Book Description HERE -->
                             <p class="book-description">
                                 The Wizard of Oz by L. Frank Baum is a classic children's novel that follows the adventures of a young girl named Dorothy, who is swept away by a tornado from her Kansas home to the magical land of Oz. In her quest to return home, Dorothy meets new friends: the Scarecrow, who wants a brain; the Tin Man, who desires a heart; and the Cowardly Lion, who seeks courage. Together, they journey to the Emerald City to ask the Wizard of Oz for help, only to discover that the power to achieve their desires lies within themselves.
                             </p>
