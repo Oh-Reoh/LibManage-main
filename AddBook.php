@@ -76,8 +76,8 @@ if (isset($_POST['submit'])) {
                 $stmt->bind_param("sssisssis", $bookname, $author, $bookNumber, $publishYear, $genreInput, $description, $issueddate, $isinuse, $image);
 
                 if ($stmt->execute()) {
-                    $bookId = $stmt->insert_id;
-                    generateBookFiles($bookId, $bookname, $author, $image, $description, $publishYear, $genres);
+                    $bookId = $stmt->insert_id; // Get the last inserted ID
+                    generateBookFiles($bookId, $bookname, $author, $image, $description, $publishYear, $genres, $bookNumber);
                     
                     // Redirect to dashboard
                     header("Location: Dashboard(Librarian).php");
@@ -101,32 +101,40 @@ $conn->close();
  * Generate PHP and CSS files for the new book.
  */
 function generateBookFiles($id, $name, $author, $image, $description, $year, $genres, $bookNumber) {
-    $templatePath = 'templates/booktemplate.php';
-    $cssTemplatePath = 'templates/booktemplate.css';
-    $outputPath = "books/book$id.php";
-    $cssOutputPath = "books/book$id.css";
+    // Paths for the templates and where the generated files will be stored
+    $templatePath = 'booktemplate.php'; // Ensure this exists in the same folder
+    $cssTemplatePath = 'booktemplate.css'; // Ensure this exists in the same folder
+    $outputPath = "books/book{$id}.php"; // Dynamically name the PHP file
+    $cssOutputPath = "books/book{$id}.css"; // Dynamically name the CSS file
 
+    // Ensure the PHP template file exists
     if (!file_exists($templatePath)) {
         echo "<script>alert('Error: Book template not found.');</script>";
         return;
     }
 
-    // Replace placeholders in the PHP template
+    // Read the contents of the PHP template
     $bookTemplate = file_get_contents($templatePath);
+
+    // Replace placeholders in the PHP template with actual book details
     $bookTemplate = str_replace(
         ['{{ID}}', '{{NAME}}', '{{AUTHOR}}', '{{IMAGE}}', '{{DESCRIPTION}}', '{{YEAR}}', '{{GENRES}}', '{{BOOKNUMBER}}'],
         [$id, $name, $author, $image, $description, $year, implode(', ', $genres), $bookNumber],
         $bookTemplate
     );
 
-    // Write the PHP file
+    // Write the modified PHP content into a uniquely named file
     if (file_put_contents($outputPath, $bookTemplate) === false) {
         echo "<script>alert('Error generating book PHP file.');</script>";
     }
 
-    // Copy CSS template
+    // Copy the CSS template to a uniquely named CSS file
     if (file_exists($cssTemplatePath)) {
-        copy($cssTemplatePath, $cssOutputPath);
+        if (!copy($cssTemplatePath, $cssOutputPath)) {
+            echo "<script>alert('Error generating book CSS file.');</script>";
+        }
+    } else {
+        echo "<script>alert('Error: CSS template not found.');</script>";
     }
 }
 ?>

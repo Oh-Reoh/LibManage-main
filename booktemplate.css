@@ -1,0 +1,66 @@
+body {
+	font-family: 'Poppins', sans-serif;
+	background-color: #f4f4f4;
+	margin: 0;
+	padding: 0;
+}
+
+.dboard_content {
+	padding: 20px;
+}
+
+.title {
+	font-size: 24px;
+	font-weight: bold;
+	margin-bottom: 20px;
+	color: #333;
+}
+
+.data {
+	display: flex;
+	justify-content: space-between;
+}
+
+.left-column,
+.right-column {
+	width: 48%;
+	background: #fff;
+	border: 1px solid #ddd;
+	border-radius: 8px;
+	padding: 20px;
+	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.book-information .label {
+	font-weight: bold;
+	color: #555;
+}
+
+.book-information .value {
+	color: #333;
+}
+
+.book-image img {
+	width: 100%;
+	height: auto;
+	border-radius: 8px;
+}
+
+.book-overview .book-title {
+	font-size: 22px;
+	font-weight: bold;
+	color: #333;
+	margin-bottom: 10px;
+}
+
+.book-overview .book-author {
+	font-size: 18px;
+	color: #666;
+	margin-bottom: 15px;
+}
+
+.book-overview .book-description {
+	font-size: 16px;
+	line-height: 1.5;
+	color: #444;
+}

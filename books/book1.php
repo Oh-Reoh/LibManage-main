@@ -5,8 +5,8 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<link href='https://unpkg.com/boxicons@2.0.9/css/boxicons.min.css' rel='stylesheet'>
 	<link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
-	<link rel="stylesheet" href="book{{ID}}.css">
-	<title>{{NAME}}</title>
+	<link rel="stylesheet" href="book1.css">
+	<title>Murder on the Orient Express</title>
 </head>
 <body>
 	<div class="dboard_content">
@@ -32,7 +32,7 @@
 		<!-- Main Content -->
 		<section id="content">
 			<main>
-				<h1 class="title">{{NAME}}</h1>
+				<h1 class="title">Murder on the Orient Express</h1>
 				<div class="data">
 					<div class="left-column">
 						<div class="content-data book-information">
@@ -40,19 +40,19 @@
 								<div class="book-details">
 									<div class="detail-item">
 										<span class="label">Publish Year:</span>
-										<span class="value">{{YEAR}}</span>
+										<span class="value">1934</span>
 									</div>
 									<div class="detail-item">
 										<span class="label">Genre:</span>
-										<span class="value">{{GENRES}}</span>
+										<span class="value">novel, mystery</span>
 									</div>
 									<div class="detail-item">
 										<span class="label">Book Number:</span>
-										<span class="value">{{BOOKNUMBER}}</span>
+										<span class="value">1</span>
 									</div>
 								</div>
 								<div class="book-image">
-									<img src="../images/{{IMAGE}}" alt="Book Image">
+									<img src="../images/murder-on-the-orient-express.jpg" alt="Book Image">
 								</div>
 							</div>
 						</div>
@@ -60,10 +60,12 @@
 					<div class="right-column">
 						<div class="content-data book-overview">
 							<div class="book-overview-content">
-								<img src="../images/{{IMAGE}}" alt="{{NAME}}" class="book-cover">
-								<h2 class="book-title">{{NAME}}</h2>
-								<p class="book-author">by {{AUTHOR}}</p>
-								<p class="book-description">{{DESCRIPTION}}</p>
+								<img src="../images/murder-on-the-orient-express.jpg" alt="Murder on the Orient Express" class="book-cover">
+								<h2 class="book-title">Murder on the Orient Express</h2>
+								<p class="book-author">by Agatha Christie</p>
+								<p class="book-description">Murder on the Orient Express is undoubtedly one of Agatha Christie&#039;s greatest mystery novels.
+
+Just after midnight, a snowdrift stops the Orient Express in its tracks. The luxurious train is surprisingly full for the time of the year, but by the morning it is one passenger fewer. An American tycoon lies dead in his compartment, stabbed a dozen times, his door locked from the inside. Isolated and with a killer in their midst, detective Hercule Poirot must identify the murderer – in case he or she decides to strike again.</p>
 							</div>
 						</div>
 					</div>
