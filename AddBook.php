@@ -4,6 +4,11 @@ $username = "root";
 $password = "";
 $dbname = "libmanagedb";
 
+ob_start();
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 // Establish database connection
 $conn = new mysqli($servername, $username, $password, $dbname);
 
@@ -12,7 +17,7 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-// List of allowed genres (case-insensitive)
+// Allowed genres
 $allowedGenres = [
     "Fantasy", "Science Fiction", "Dystopian", "Mystery", "Horror", "Thriller",
     "Historical Fiction", "Romance", "Contemporary Fiction", "Literary Fiction",
@@ -25,18 +30,17 @@ $allowedGenres = [
 ];
 
 // Handle form submission
-if (isset($_POST['submit'])) {
-    $bookname = htmlspecialchars($_POST['bookname']);
-    $author = htmlspecialchars($_POST['author']);
-    $bookNumber = htmlspecialchars($_POST['bookNumber']);
-    $publishYear = intval($_POST['publishYear']);
-    $genreInput = htmlspecialchars($_POST['genre']);
-    $description = htmlspecialchars($_POST['description']);
-    $issueddate = date('Y-m-d'); // Current date
-    $isinuse = 0; // Default: book is not in use
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $bookname = htmlspecialchars($_POST['bookname'] ?? '');
+    $author = htmlspecialchars($_POST['author'] ?? '');
+    $bookNumber = htmlspecialchars($_POST['bookNumber'] ?? '');
+    $publishYear = intval($_POST['publishYear'] ?? 0);
+    $genreInput = htmlspecialchars($_POST['genre'] ?? '');
+    $description = htmlspecialchars($_POST['description'] ?? '');
+    $issueddate = date('Y-m-d');
+    $isinuse = 0;
 
-    // Validate genres
-    $genres = array_map('trim', explode(',', strtolower($genreInput))); // Split and lower case
+    $genres = array_map('trim', explode(',', strtolower($genreInput)));
     $invalidGenres = array_diff($genres, array_map('strtolower', $allowedGenres));
 
     if ($publishYear > date('Y')) {
@@ -44,7 +48,6 @@ if (isset($_POST['submit'])) {
     } elseif (!empty($invalidGenres)) {
         echo "<script>alert('Invalid genre(s): " . implode(', ', $invalidGenres) . ". Try Again.');</script>";
     } else {
-        // Check for duplicate bookNumber
         $checkStmt = $conn->prepare("SELECT COUNT(*) FROM tbl_bookinfo WHERE bookNumber = ?");
         $checkStmt->bind_param("s", $bookNumber);
         $checkStmt->execute();
@@ -55,8 +58,7 @@ if (isset($_POST['submit'])) {
         if ($count > 0) {
             echo "<script>alert('Book Number already exists. Please use a unique Book Number.');</script>";
         } else {
-            // Handle image upload
-            $image = 'blankimg.png'; // Default image
+            $image = 'blankimg.png';
             if (isset($_FILES['image']) && $_FILES['image']['error'] == UPLOAD_ERR_OK) {
                 $targetDir = "images/";
                 $imageName = basename($_FILES['image']['name']);
@@ -64,80 +66,74 @@ if (isset($_POST['submit'])) {
 
                 if (move_uploaded_file($_FILES['image']['tmp_name'], $targetFilePath)) {
                     $image = $imageName;
-                } else {
-                    echo "<script>alert('Error uploading image. Default image will be used.');</script>";
                 }
             }
 
-            // Insert into database
             $stmt = $conn->prepare("INSERT INTO tbl_bookinfo (bookname, author, bookNumber, publishYear, genre, description, issueddate, isinuse, image) 
                                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            if ($stmt) {
-                $stmt->bind_param("sssisssis", $bookname, $author, $bookNumber, $publishYear, $genreInput, $description, $issueddate, $isinuse, $image);
+            $stmt->bind_param(
+                "sssisssis",
+                $bookname,
+                $author,
+                $bookNumber,
+                $publishYear,
+                $genreInput,
+                $description,
+                $issueddate,
+                $isinuse,
+                $image
+            );
 
-                if ($stmt->execute()) {
-                    $bookId = $stmt->insert_id; // Get the last inserted ID
-                    generateBookFiles($bookId, $bookname, $author, $image, $description, $publishYear, $genres, $bookNumber);
-                    
-                    // Redirect to dashboard
-                    header("Location: Dashboard(Librarian).php");
+            if ($stmt->execute()) {
+                $bookId = $stmt->insert_id;
+                if (generateBookFiles($bookId, $bookname, $author, $image, $description, $publishYear, $genres, $bookNumber)) {
+                    header("Location: book{$bookId}.php");
                     exit();
                 } else {
-                    echo "<script>alert('Error: " . $stmt->error . "');</script>";
+                    echo "<script>alert('Error generating book files.');</script>";
                 }
-
-                $stmt->close();
             } else {
-                echo "<script>alert('Error preparing the statement: " . $conn->error . "');</script>";
+                echo "<script>alert('Error: " . $stmt->error . "');</script>";
             }
+
+            $stmt->close();
         }
     }
 }
 
-// Close the database connection
 $conn->close();
 
-/**
- * Generate PHP and CSS files for the new book.
- */
 function generateBookFiles($id, $name, $author, $image, $description, $year, $genres, $bookNumber) {
-    // Paths for the templates and where the generated files will be stored
-    $templatePath = 'booktemplate.php'; // Ensure this exists in the same folder
-    $cssTemplatePath = 'booktemplate.css'; // Ensure this exists in the same folder
-    $outputPath = "books/book{$id}.php"; // Dynamically name the PHP file
-    $cssOutputPath = "books/book{$id}.css"; // Dynamically name the CSS file
+    $templatePath = 'booktemplate.php';
+    $cssTemplatePath = 'booktemplate.css';
+    $outputPath = "book{$id}.php";
+    $cssOutputPath = "book{$id}.css";
 
-    // Ensure the PHP template file exists
     if (!file_exists($templatePath)) {
-        echo "<script>alert('Error: Book template not found.');</script>";
-        return;
+        return false;
     }
 
-    // Read the contents of the PHP template
     $bookTemplate = file_get_contents($templatePath);
-
-    // Replace placeholders in the PHP template with actual book details
     $bookTemplate = str_replace(
         ['{{ID}}', '{{NAME}}', '{{AUTHOR}}', '{{IMAGE}}', '{{DESCRIPTION}}', '{{YEAR}}', '{{GENRES}}', '{{BOOKNUMBER}}'],
         [$id, $name, $author, $image, $description, $year, implode(', ', $genres), $bookNumber],
         $bookTemplate
     );
 
-    // Write the modified PHP content into a uniquely named file
     if (file_put_contents($outputPath, $bookTemplate) === false) {
-        echo "<script>alert('Error generating book PHP file.');</script>";
+        return false;
     }
 
-    // Copy the CSS template to a uniquely named CSS file
-    if (file_exists($cssTemplatePath)) {
-        if (!copy($cssTemplatePath, $cssOutputPath)) {
-            echo "<script>alert('Error generating book CSS file.');</script>";
-        }
-    } else {
-        echo "<script>alert('Error: CSS template not found.');</script>";
+    if (!copy($cssTemplatePath, $cssOutputPath)) {
+        return false;
     }
+
+    return true;
 }
 ?>
+
+
+
 
 
 

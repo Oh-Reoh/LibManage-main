@@ -1,13 +1,24 @@
 <?php
 session_start();
 
-// Example role check for librarian. Ensure this is set during login.
+// Sample book details (Replace these placeholders dynamically if needed)
+$book = [
+    'title' => 'bear',
+    'author' => 'Ethan',
+    'year' => '2024',
+    'genre' => 'novel',
+    'number' => '1',
+    'image' => 'blankimg.png',
+    'description' => 'book on earad',
+    'history' => 'No history available yet.',
+    'rating' => '4.1',
+    'stars' => '★★★★☆',
+    'language' => 'ENGLISH',
+];
+
+// Check if user is logged in and is a librarian
 $isLibrarian = isset($_SESSION['role']) && $_SESSION['role'] === 'Librarian';
-
-// Debugging: Uncomment this line to ensure the session variable is working as expected
-// echo "User Role: " . ($_SESSION['role'] ?? 'Not Set');
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -17,7 +28,7 @@ $isLibrarian = isset($_SESSION['role']) && $_SESSION['role'] === 'Librarian';
     <link href='https://fonts.googleapis.com/css?family=Bakbak+One' rel='stylesheet'>
     <link href="https://fonts.googleapis.com/css2?family=Baloo+2&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="book1.css">
+    <link rel="stylesheet" href="book2.css">
     <title><?php echo htmlspecialchars($book['title']); ?></title>
 </head>
 <body>
@@ -158,5 +169,35 @@ $isLibrarian = isset($_SESSION['role']) && $_SESSION['role'] === 'Librarian';
     </footer>
 
     <script src="pop-up.js"></script>
+    <script>
+        // Logic for Delete Book button
+        document.getElementById("deleteBookBtn")?.addEventListener("click", () => {
+            if (confirm("Are you sure you want to delete this book?")) {
+                fetch("deletebook.php", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ bookId: <?php echo '2'; ?> }),
+                })
+                .then((response) => response.json())
+                .then((data) => {
+                    if (data.success) {
+                        alert("Book deleted successfully!");
+                        window.location.href = "booklist(Librarian).php";
+                    } else {
+                        alert(data.message || "Failed to delete book.");
+                    }
+                })
+                .catch(() => alert("An error occurred while deleting the book."));
+            }
+        });
+
+        // Logic for Edit Book button
+        document.getElementById("editBookBtn")?.addEventListener("click", () => {
+            const editModal = document.getElementById("editBookModal");
+            editModal.style.display = "block"; // Show Edit modal
+        });
+    </script>
 </body>
 </html>

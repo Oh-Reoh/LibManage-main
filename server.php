@@ -24,10 +24,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
         // Verify password
         if (password_verify($password, $user['password'])) {
+            // Clear any previous session variables
+            session_unset();
+
             // Set session variables
             $_SESSION['success_message'] = 'Login successful!';
             $_SESSION['username'] = $user['username'];
             $_SESSION['role'] = $user['role'];
+
+            // Debugging role assignment (for testing only, remove in production)
+            // echo "Role: " . $_SESSION['role'];
 
             // Role-based redirection
             if ($user['role'] === 'librarian') {

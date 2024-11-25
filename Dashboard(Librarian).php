@@ -1,3 +1,15 @@
+<?php
+session_start();
+
+// Force the user's role to 'librarian' when accessing the librarian's dashboard
+$_SESSION['role'] = 'librarian';
+
+// Redirect to the login page if the user is not logged in
+if (!isset($_SESSION['username'])) {
+    header('Location: LoginPage.php');
+    exit();
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,12 +17,13 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<link href='https://unpkg.com/boxicons@2.0.9/css/boxicons.min.css' rel='stylesheet'>
 	<link href='https://fonts.googleapis.com/css?family=Bakbak One' rel='stylesheet'>
-	<link href="https://fonts.googleapis.com/css2?family=Baloo+2&display=swap" rel="stylesheet">
+	<link href="https://fonts.googleapis.com/css2?family=Baloo+2&display=swap" rel='stylesheet'>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
 
 	<link rel="stylesheet" href="Dashboard(Librarian).css">
+	<link rel="stylesheet" href="pop-up_add.css">
 	<title>Dashboard</title>
 </head>
 <body>
@@ -69,13 +82,12 @@
 			</form>
 
     
-			<a href="AddBook.php">
-				<button class="add-book-btn">Add Book</button>
-			</a>
+			<!-- Add Book Button -->
+			<button id="addBookBtn" class="add-book-btn">Add Book</button>
 
 			
 			<a href="#" class="nav-link">
-				<i class='bx bxs-bell icon' ></i>
+				<i class='bx Fbxs-bell icon' ></i>
 				<span class="badge">5</span>
 			</a>
 
@@ -232,7 +244,7 @@
 										$issuedDate = htmlspecialchars($row['formatted_issueddate']);
 										
 										echo "<tr>
-												<td><a href='books/book{$bookId}.php'>{$bookName}</a></td>
+												<td><a href='book{$bookId}.php'>{$bookName}</a></td>
 												<td>{$author}</td>
 												<td>on shelf</td>
 												<td>{$bookId}</td>
@@ -251,7 +263,95 @@
 
 		</main>
 	</section>
+	
 	</div>
+
+	<!-- Add Book Modal -->
+	<div id="addBookModal" class="modal">
+		<div class="modal-content">
+			<span class="close">&times;</span>
+			<h2>Add A New Book</h2>
+			<form id="addBookForm" action="AddBook.php" method="POST" enctype="multipart/form-data">
+				<!-- Image Preview -->
+				<div class="image-preview-container">
+					<img id="imagePreview" src="images/blankimg.png" alt="Book Cover Preview">
+					<input type="file" id="imageInput" name="image" accept="image/*" style="display: none;">
+					<button type="button" id="uploadButton">Upload Image</button>
+				</div>
+
+				<!-- Other form fields -->
+				<label for="bookname">Book Name</label>
+				<input type="text" id="bookname" name="bookname" placeholder="Enter the book name" required>
+				
+				<label for="author">Author</label>
+				<input type="text" id="author" name="author" placeholder="Enter the author's name" required>
+				
+				<label for="bookNumber">Book Number</label>
+				<input type="text" id="bookNumber" name="bookNumber" placeholder="Enter the book number" required>
+				
+				<label for="publishYear">Publish Year</label>
+				<input type="number" id="publishYear" name="publishYear" placeholder="Enter the publish year" required>
+				
+				<label for="genre">Genre</label>
+				<input type="text" id="genre" name="genre" placeholder="Enter genres (comma-separated)" required>
+				
+				<label for="description">Description</label>
+				<textarea id="description" name="description" placeholder="Enter a brief description" required></textarea>
+
+				<button type="submit" class="modal-submit-btn">Submit</button>
+			</form>
+		</div>
+	</div>
+
 	<script src="booklist(Librarian).js"></script>
+	
+	<script>
+		// Modal Logic
+		document.addEventListener("DOMContentLoaded", () => {
+			const modal = document.getElementById("addBookModal");
+			const openModal = document.getElementById("addBookBtn");
+			const closeModal = document.querySelector(".close"); // Correctly select the close button
+
+			// Open modal when "Add Book" button is clicked
+			openModal.addEventListener("click", () => {
+				modal.style.display = "block";
+			});
+
+			// Close modal when the close button is clicked
+			closeModal.addEventListener("click", () => {
+				modal.style.display = "none";
+			});
+
+			// Close modal when clicking outside of it
+			window.addEventListener("click", (event) => {
+				if (event.target === modal) {
+					modal.style.display = "none";
+				}
+			});
+		});
+	</script>
+
+	<script>
+		document.addEventListener("DOMContentLoaded", () => {
+			const imageInput = document.getElementById("imageInput");
+			const imagePreview = document.getElementById("imagePreview");
+			const uploadButton = document.getElementById("uploadButton");
+
+			uploadButton.addEventListener("click", () => {
+				imageInput.click(); // Simulate click on file input
+			});
+
+			imageInput.addEventListener("change", () => {
+				const file = imageInput.files[0];
+				if (file) {
+					const reader = new FileReader();
+					reader.onload = () => {
+						imagePreview.src = reader.result; // Update preview with uploaded image
+					};
+					reader.readAsDataURL(file);
+				}
+			});
+		});
+	</script>
 </body>
 </html>

@@ -1,13 +1,27 @@
 <?php
 session_start();
 
-// Example role check for librarian. Ensure this is set during login.
-$isLibrarian = isset($_SESSION['role']) && $_SESSION['role'] === 'Librarian';
+// Sample book details (Replace these placeholders dynamically if needed)
+$book = [
+    'id' => '1', // Ensure this is dynamically replaced
+    'title' => 'Murder on the Orient Express',
+    'author' => 'Agatha Christie',
+    'year' => '1934',
+    'genre' => 'novel, mystery',
+    'number' => '1',
+    'image' => 'murder-on-the-orient-express.jpg',
+    'description' => 'Murder on the Orient Express is undoubtedly one of Agatha Christie&#039;s greatest mystery novels.',
+    'history' => 'No history available yet.',
+    'rating' => '4.1',
+    'stars' => '★★★★☆',
+    'language' => 'ENGLISH',
+];
 
-// Debugging: Uncomment this line to ensure the session variable is working as expected
-// echo "User Role: " . ($_SESSION['role'] ?? 'Not Set');
+// Determine user role
+$role = strtolower($_SESSION['role'] ?? '');
+$dashboardLink = $role === 'librarian' ? 'Dashboard(Librarian).php' : 'Dashboard(Reader).php';
+$booklistLink = $role === 'librarian' ? 'booklist(Librarian).php' : 'booklist(Reader).php';
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -15,38 +29,28 @@ $isLibrarian = isset($_SESSION['role']) && $_SESSION['role'] === 'Librarian';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href='https://unpkg.com/boxicons@2.0.9/css/boxicons.min.css' rel='stylesheet'>
     <link href='https://fonts.googleapis.com/css?family=Bakbak+One' rel='stylesheet'>
-    <link href="https://fonts.googleapis.com/css2?family=Baloo+2&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="book1.css">
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2&display=swap" rel='stylesheet'>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel='stylesheet'>
+    <link rel="stylesheet" href="book<?php echo htmlspecialchars($book['id']); ?>.css">
     <title><?php echo htmlspecialchars($book['title']); ?></title>
 </head>
 <body>
     <div class="dboard_content">
         <!-- Sidebar -->
         <section id="sidebar">
-            <a href="Dashboard(Librarian).php" class="brand">
+            <a href="<?php echo $dashboardLink; ?>" class="brand">
                 <img src="images/logo_ra.png" alt="Logo Icon" class="logo">
                 <p>Libmanage</p>
             </a>
             <ul class="side-menu">
                 <li>
-                    <a href="Dashboard(Librarian).php" class="active">
+                    <a href="<?php echo $dashboardLink; ?>" class="active">
                         <img src="images/dashboard_icon(sml).png" alt="Dashboard Icon" class="icon-therest"> Dashboard
                     </a>
                 </li>
                 <li>
-                    <a href="booklist(Librarian).php" class="active">
+                    <a href="<?php echo $booklistLink; ?>" class="active">
                         <img src="images/book_icon(big).png" alt="Books Icon" class="icon"> Books
-                    </a>
-                </li>
-                <li>
-                    <a href="Reader'sRequest(Librarian).php" class="active">
-                        <img src="images/readers_request_icon.png" alt="Requests Icon" class="icon-therest"> Requests
-                    </a>
-                </li>
-                <li>
-                    <a href="#" class="active">
-                        <img src="images/settings_icon.png" alt="Settings Icon" class="icon-therest"> Settings
                     </a>
                 </li>
             </ul>
@@ -62,10 +66,10 @@ $isLibrarian = isset($_SESSION['role']) && $_SESSION['role'] === 'Librarian';
                     </div>
                 </form>
 
-                <!-- Edit/Delete Buttons for Librarians -->
-                <?php if ($isLibrarian): ?>
-                    <button id="editBookBtn" class="action-button">Edit</button>
-                    <button id="deleteBookBtn" class="action-button delete-button">Delete</button>
+                <!-- Conditionally Show Edit/Delete Buttons -->
+                <?php if ($role === 'librarian'): ?>
+                    <a href="editbook.php?id=<?php echo htmlspecialchars($book['id']); ?>" class="action-button">Edit</a>
+                    <a href="deletebook.php?id=<?php echo htmlspecialchars($book['id']); ?>" class="action-button delete-button">Delete</a>
                 <?php endif; ?>
 
                 <a href="#" class="nav-link">
@@ -82,9 +86,8 @@ $isLibrarian = isset($_SESSION['role']) && $_SESSION['role'] === 'Librarian';
                 </div>
             </nav>
             <main>
-                <h1 class="title"><a href="booklist(Librarian).php">Books</a> >> <?php echo htmlspecialchars($book['title']); ?></h1>
+                <h1 class="title"><a href="<?php echo $booklistLink; ?>">Books</a> >> <?php echo htmlspecialchars($book['title']); ?></h1>
                 <div class="data">
-                    <!-- Left Column -->
                     <div class="left-column">
                         <div class="content-data book-information">
                             <div class="book-info-content">
@@ -114,22 +117,21 @@ $isLibrarian = isset($_SESSION['role']) && $_SESSION['role'] === 'Librarian';
                             <p><?php echo htmlspecialchars($book['history']); ?></p>
                         </div>
                     </div>
-                    <!-- Right Column -->
                     <div class="right-column">
                         <div class="content-data book-overview">
-							<div class="book-overview-content">
-								<img src="images/<?php echo htmlspecialchars($book['image']); ?>" alt="<?php echo htmlspecialchars($book['title']); ?> Cover" class="book-cover">
-								<h2 class="book-title"><?php echo htmlspecialchars($book['title']); ?></h2>
-								<p class="book-author">by <?php echo htmlspecialchars($book['author']); ?></p>
-								<p class="book-description"><?php echo htmlspecialchars($book['description']); ?></p>
-								<div class="book-rating">
-									<span><?php echo htmlspecialchars($book['rating']); ?></span>
-									<div class="stars"><?php echo htmlspecialchars($book['stars']); ?></div>
-									<span class="language"><?php echo htmlspecialchars($book['language']); ?></span>
-								</div>
-								<button class="read-button">View/Read Book</button>
-							</div>
-						</div>
+                            <div class="book-overview-content">
+                                <img src="images/<?php echo htmlspecialchars($book['image']); ?>" alt="<?php echo htmlspecialchars($book['title']); ?> Cover" class="book-cover">
+                                <h2 class="book-title"><?php echo htmlspecialchars($book['title']); ?></h2>
+                                <p class="book-author">by <?php echo htmlspecialchars($book['author']); ?></p>
+                                <p class="book-description"><?php echo htmlspecialchars($book['description']); ?></p>
+                                <div class="book-rating">
+                                    <span><?php echo htmlspecialchars($book['rating']); ?></span>
+                                    <div class="stars"><?php echo htmlspecialchars($book['stars']); ?></div>
+                                    <span class="language"><?php echo htmlspecialchars($book['language']); ?></span>
+                                </div>
+                                <button class="read-button">View/Read Book</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </main>
@@ -156,7 +158,5 @@ $isLibrarian = isset($_SESSION['role']) && $_SESSION['role'] === 'Librarian';
             </div>
         </div>
     </footer>
-
-    <script src="pop-up.js"></script>
 </body>
 </html>

@@ -1,3 +1,15 @@
+<?php
+session_start();
+
+// Force the user's role to 'regular' when accessing the reader's dashboard
+$_SESSION['role'] = 'regular';
+
+// Redirect to the login page if the user is not logged in
+if (!isset($_SESSION['username'])) {
+    header('Location: LoginPage.php');
+    exit();
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,7 +20,7 @@
 	<link href="https://fonts.googleapis.com/css2?family=Baloo+2&display=swap" rel="stylesheet">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900&display=swap" rel="stylesheet">
 
 	<link rel="stylesheet" href="Dashboard(Reader).css">
 	<title>Dashboard</title>
@@ -29,14 +41,8 @@
 			</li>
 
 			<li>
-				<a href="booklist(Librarian).html" class="active">
+				<a href="booklist(Reader).php" class="active">
 					<img src="images/book_icon.png" alt="Dashboard Icon" class="icon-therest"> Books
-				</a>
-			</li>
-
-			<li>
-				<a href="Reader'sRequest(Librarian).php" class="active">
-					<img src="images/readers_request_icon.png" alt="Dashboard Icon" class="icon-therest"> Requests
 				</a>
 			</li>
 
@@ -81,9 +87,9 @@
 			<div class="profile">
 				<img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?ixid=MnwxMjA3fDB8MHxzZWFyY2h8NHx8cGVvcGxlfGVufDB8fDB8fA%3D%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60" alt="">
 				<ul class="profile-link">
-					<li><a href="profile.html"><i class='bx bxs-user-circle icon' ></i> Profile</a></li>
+					<li><a href="profile.php"><i class='bx bxs-user-circle icon' ></i> Profile</a></li>
 					<li><a href="#"><i class='bx bxs-cog' ></i> Settings</a></li>
-					<li><a href="Mainpage.html"><i class='bx bxs-log-out-circle' ></i> Logout</a></li>
+					<li><a href="Mainpage.php"><i class='bx bxs-log-out-circle' ></i> Logout</a></li>
 				</ul>
 			</div>
 		</nav>
@@ -166,7 +172,7 @@
 											FROM tbl_bookinfo");
 										while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 											echo "<tr>
-													<td><a href='books/	book{$row['id']}.php'>" . htmlspecialchars($row['bookname']) . "</a></td>
+													<td><a href='book{$row['id']}.php'>" . htmlspecialchars($row['bookname']) . "</a></td>
 													<td>" . htmlspecialchars($row['author']) . "</td>
 													<td>" . $row['book_status'] . "</td>
 													<td>" . $row['id'] . "</td>
