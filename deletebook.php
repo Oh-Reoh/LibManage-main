@@ -1,9 +1,11 @@
 <?php
 session_start();
+header('Content-Type: application/json');
 
-// Ensure the user is a librarian
-if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Librarian') {
-    die(json_encode(["success" => false, "message" => "Unauthorized access.", "debug" => $_SESSION]));
+// Check if the user is a librarian
+if (!isset($_SESSION['role']) || strtolower($_SESSION['role']) !== 'librarian') {
+    echo json_encode(["success" => false, "message" => "Unauthorized access."]);
+    exit();
 }
 
 // Database connection
@@ -16,7 +18,8 @@ $conn = new mysqli($servername, $username, $password, $dbname);
 
 // Check connection
 if ($conn->connect_error) {
-    die(json_encode(["success" => false, "message" => "Database connection failed."]));
+    echo json_encode(["success" => false, "message" => "Database connection failed."]);
+    exit();
 }
 
 // Handle delete request
@@ -24,25 +27,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $bookId = intval($_POST['bookId']);
 
     // Check if the book exists
-    $checkStmt = $conn->prepare("SELECT image FROM tbl_bookinfo WHERE id = ?");
-    if (!$checkStmt) {
-        die(json_encode(["success" => false, "message" => "Query preparation failed."]));
-    }
-    $checkStmt->bind_param("i", $bookId);
-    $checkStmt->execute();
-    $checkStmt->bind_result($image);
-    $exists = $checkStmt->fetch();
-    $checkStmt->close();
+    $stmt = $conn->prepare("SELECT image FROM tbl_bookinfo WHERE id = ?");
+    $stmt->bind_param("i", $bookId);
+    $stmt->execute();
+    $stmt->bind_result($image);
+    $exists = $stmt->fetch();
+    $stmt->close();
 
     if (!$exists) {
-        die(json_encode(["success" => false, "message" => "Book not found."]));
+        echo json_encode(["success" => false, "message" => "Book not found."]);
+        exit();
     }
 
     // Delete the book record
     $deleteStmt = $conn->prepare("DELETE FROM tbl_bookinfo WHERE id = ?");
-    if (!$deleteStmt) {
-        die(json_encode(["success" => false, "message" => "Error preparing delete query: " . $conn->error]));
-    }
     $deleteStmt->bind_param("i", $bookId);
 
     if ($deleteStmt->execute()) {
@@ -53,6 +51,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 unlink($filePath); // Delete the image file
             }
         }
+
+        // Remove associated PHP and CSS files
+        $phpFile = "book" . $bookId . ".php";
+        $cssFile = "book" . $bookId . ".css";
+
+        if (file_exists($phpFile)) {
+            unlink($phpFile); // Delete the PHP file
+        }
+        if (file_exists($cssFile)) {
+            unlink($cssFile); // Delete the CSS file
+        }
+
         echo json_encode(["success" => true, "message" => "Book deleted successfully."]);
     } else {
         echo json_encode(["success" => false, "message" => "Error deleting book: " . $deleteStmt->error]);

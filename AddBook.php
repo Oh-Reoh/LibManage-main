@@ -87,7 +87,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($stmt->execute()) {
                 $bookId = $stmt->insert_id;
                 if (generateBookFiles($bookId, $bookname, $author, $image, $description, $publishYear, $genres, $bookNumber)) {
-                    header("Location: book{$bookId}.php");
+                    // Redirect to the librarian dashboard after successfully adding the book
+                    header("Location: Dashboard(Librarian).php");
                     exit();
                 } else {
                     echo "<script>alert('Error generating book files.');</script>";
@@ -95,6 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 echo "<script>alert('Error: " . $stmt->error . "');</script>";
             }
+            
 
             $stmt->close();
         }

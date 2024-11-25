@@ -9,6 +9,9 @@
     height: 100%;
     overflow: auto;
     background-color: rgba(0, 0, 0, 0.7); /* Darker background for better focus */
+    justify-content: center; /* Center horizontally */
+    align-items: center; /* Center vertically */
+
 }
 
 /* Modal Content */
@@ -80,7 +83,30 @@
     outline: none;
 }
 
-/* Submit Button */
+/* Button Styling */
+.add-book-btn,
+.edit-book-btn,
+.delete-book-btn {
+    padding: 10px 20px;
+    border-radius: 10px;
+    background: transparent;
+    color: #F5F5F5;
+    border: 1px solid #F5F5F5; /* Consistent border color */
+    cursor: pointer;
+    transition: all .3s ease;
+    font-size: 14px;
+    text-align: center; /* Ensures centered text */
+}
+
+/* Hover Effect for Buttons */
+.add-book-btn:hover,
+.edit-book-btn:hover,
+.delete-book-btn:hover {
+    background: #F5F5F5; /* Same hover effect */
+    color: #5132E2; /* Match the hover color scheme */
+}
+
+/* Submit Button for Modal */
 .modal-submit-btn {
     display: block;
     background-color: #513CA3;
@@ -171,3 +197,26 @@
     outline: none;
 }
 
+#deleteBookModal .modal-content p {
+    text-align: center;
+    font-size: 16px;
+    color: #333;
+    margin-bottom: 20px;
+}
+
+#deleteBookTitle {
+    font-weight: bold;
+    color: #513CA3; /* Matches the modal theme */
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+#cancelDelete {
+    background-color: #ddd;
+    color: #333;
+    margin-top: 10px;
+}
+
+#cancelDelete:hover {
+    background-color: #bbb;
+}

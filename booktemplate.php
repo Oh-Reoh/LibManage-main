@@ -1,7 +1,7 @@
 <?php
 session_start();
 
-// Sample book details (Replace these placeholders dynamically if needed)
+// Sample book details (These placeholders will be dynamically replaced during book creation)
 $book = [
     'id' => '{{ID}}', // Ensure this is dynamically replaced
     'title' => '{{NAME}}',
@@ -32,6 +32,7 @@ $booklistLink = $role === 'librarian' ? 'booklist(Librarian).php' : 'booklist(Re
     <link href="https://fonts.googleapis.com/css2?family=Baloo+2&display=swap" rel='stylesheet'>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel='stylesheet'>
     <link rel="stylesheet" href="book<?php echo htmlspecialchars($book['id']); ?>.css">
+    <link rel="stylesheet" href="pop-up_add.css">
     <title><?php echo htmlspecialchars($book['title']); ?></title>
 </head>
 <body>
@@ -68,8 +69,10 @@ $booklistLink = $role === 'librarian' ? 'booklist(Librarian).php' : 'booklist(Re
 
                 <!-- Conditionally Show Edit/Delete Buttons -->
                 <?php if ($role === 'librarian'): ?>
-                    <a href="editbook.php?id=<?php echo htmlspecialchars($book['id']); ?>" class="action-button">Edit</a>
-                    <a href="deletebook.php?id=<?php echo htmlspecialchars($book['id']); ?>" class="action-button delete-button">Delete</a>
+                    <button class="editBookBtn action-button add-book-button" data-book-id="<?php echo htmlspecialchars($book['id']); ?>">Edit</button>
+                    <button class="deleteBookBtn action-button delete-button add-book-button" 
+                            data-book-id="<?php echo htmlspecialchars($book['id']); ?>" 
+                            data-book-title="<?php echo htmlspecialchars($book['title']); ?>">Delete</button>
                 <?php endif; ?>
 
                 <a href="#" class="nav-link">
@@ -158,5 +161,8 @@ $booklistLink = $role === 'librarian' ? 'booklist(Librarian).php' : 'booklist(Re
             </div>
         </div>
     </footer>
+    
+    <script src="pop-up.js"></script>
+
 </body>
 </html>
