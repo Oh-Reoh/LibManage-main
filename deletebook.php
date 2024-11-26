@@ -2,12 +2,6 @@
 session_start();
 header('Content-Type: application/json');
 
-// Check if the user is a librarian
-if (!isset($_SESSION['role']) || strtolower($_SESSION['role']) !== 'librarian') {
-    echo json_encode(["success" => false, "message" => "Unauthorized access."]);
-    exit();
-}
-
 // Database connection
 $servername = "localhost";
 $username = "root";
@@ -25,8 +19,13 @@ if ($conn->connect_error) {
 // Handle delete request
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $bookId = intval($_POST['bookId']);
+    
+    if ($bookId <= 0) {
+        echo json_encode(["success" => false, "message" => "Invalid Book ID."]);
+        exit();
+    }
 
-    // Check if the book exists
+    // Check if the book exists in the database
     $stmt = $conn->prepare("SELECT image FROM tbl_bookinfo WHERE id = ?");
     $stmt->bind_param("i", $bookId);
     $stmt->execute();
@@ -63,7 +62,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             unlink($cssFile); // Delete the CSS file
         }
 
+        // Redirect to the Librarian Dashboard after successful deletion
         echo json_encode(["success" => true, "message" => "Book deleted successfully."]);
+        header("Location: Dashboard(Librarian).php"); // Redirect
+        exit();
     } else {
         echo json_encode(["success" => false, "message" => "Error deleting book: " . $deleteStmt->error]);
     }

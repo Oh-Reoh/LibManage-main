@@ -126,6 +126,36 @@
     background-color: #371F68;
 }
 
+/* Modal Delete Buttons */
+.modal-delete-btn {
+    display: block;                /* Ensure the buttons are block elements */
+    background-color: #513CA3;     /* Set background color */
+    color: #fff;                   /* White text */
+    font-size: 16px;                /* Font size */
+    font-weight: bold;             /* Make text bold */
+    border: none;                  /* Remove border */
+    border-radius: 5px;            /* Rounded corners */
+    padding: 12px 20px;            /* Padding inside the buttons */
+    cursor: pointer;              /* Change cursor to pointer */
+    width: 48%;                    /* 50% width for each button */
+    text-align: center;            /* Center the text inside */
+    transition: background-color 0.3s ease; /* Smooth hover effect */
+    margin-right: 4%;              /* Add some spacing between the buttons */
+}
+
+/* Change background color on hover */
+.modal-delete-btn:hover {
+    background-color: #371F68;     /* Darker purple on hover */
+}
+
+/* Container for buttons to align them side by side */
+.button-container {
+    display: flex;                 /* Use flexbox to align buttons side by side */
+    justify-content: space-between;/* Add space between buttons */
+    gap: 10px;                     /* Optional: Add gap between buttons */
+}
+
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .modal-content {

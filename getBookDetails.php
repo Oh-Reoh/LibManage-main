@@ -2,11 +2,8 @@
 session_start();
 header('Content-Type: application/json');
 
-// Check if the user is a librarian
-if (!isset($_SESSION['role']) || strtolower($_SESSION['role']) !== 'librarian') {
-    echo json_encode(["success" => false, "message" => "Unauthorized access."]);
-    exit();
-}
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 
 // Database connection
 $servername = "localhost";
@@ -18,7 +15,7 @@ $conn = new mysqli($servername, $username, $password, $dbname);
 
 // Check connection
 if ($conn->connect_error) {
-    echo json_encode(["success" => false, "message" => "Database connection failed."]);
+    echo json_encode(["success" => false, "message" => "Database connection failed: " . $conn->connect_error]);
     exit();
 }
 
@@ -28,19 +25,28 @@ if (!isset($_GET['id']) || empty($_GET['id'])) {
     exit();
 }
 
-$bookId = intval($_GET['id']);
+$bookId = intval($_GET['id']); // Ensure we are working with an integer ID
 
 // Fetch the book details
 $stmt = $conn->prepare("SELECT id, bookname, author, bookNumber, publishYear, genre, description FROM tbl_bookinfo WHERE id = ?");
 $stmt->bind_param("i", $bookId);
+
+// Check if the statement is valid
+if (!$stmt) {
+    echo json_encode(["success" => false, "message" => "Query preparation failed: " . $conn->error]);
+    exit();
+}
+
 $stmt->execute();
 $result = $stmt->get_result();
 
 if ($result->num_rows > 0) {
+    // Fetch the book details from the database
     $book = $result->fetch_assoc();
     echo json_encode(["success" => true, "data" => $book]);
 } else {
-    echo json_encode(["success" => false, "message" => "Book not found."]);
+    // No book found for the given ID
+    echo json_encode(["success" => false, "message" => "Book not found. Please check the book ID."]);
 }
 
 $stmt->close();

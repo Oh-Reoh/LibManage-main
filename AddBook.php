@@ -1,20 +1,23 @@
 <?php
+session_start();
+header('Content-Type: application/json');
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 $servername = "localhost";
 $username = "root";
 $password = "";
 $dbname = "libmanagedb";
 
-ob_start();
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
-
 // Establish database connection
 $conn = new mysqli($servername, $username, $password, $dbname);
 
-// Check connection
 if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+    // Set error message in session and redirect to Dashboard
+    $_SESSION['error_message'] = 'Database connection failed. Redirecting to Dashboard.';
+    header("Location: Dashboard(Librarian).php");
+    exit();
 }
 
 // Allowed genres
@@ -44,9 +47,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $invalidGenres = array_diff($genres, array_map('strtolower', $allowedGenres));
 
     if ($publishYear > date('Y')) {
-        echo "<script>alert('This year hasn\\'t come out yet. Try Again.');</script>";
+        // Set error message and redirect
+        $_SESSION['error_message'] = 'Invalid publish year. Try again.';
+        header("Location: Dashboard(Librarian).php");
+        exit();
     } elseif (!empty($invalidGenres)) {
-        echo "<script>alert('Invalid genre(s): " . implode(', ', $invalidGenres) . ". Try Again.');</script>";
+        // Set error message and redirect
+        $_SESSION['error_message'] = 'Invalid genre(s): ' . implode(', ', $invalidGenres) . '. Try again.';
+        header("Location: Dashboard(Librarian).php");
+        exit();
     } else {
         $checkStmt = $conn->prepare("SELECT COUNT(*) FROM tbl_bookinfo WHERE bookNumber = ?");
         $checkStmt->bind_param("s", $bookNumber);
@@ -56,7 +65,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $checkStmt->close();
 
         if ($count > 0) {
-            echo "<script>alert('Book Number already exists. Please use a unique Book Number.');</script>";
+            // Set error message and redirect
+            $_SESSION['error_message'] = 'Book number already exists. Please use a unique book number.';
+            header("Location: Dashboard(Librarian).php");
+            exit();
         } else {
             $image = 'blankimg.png';
             if (isset($_FILES['image']) && $_FILES['image']['error'] == UPLOAD_ERR_OK) {
@@ -87,16 +99,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($stmt->execute()) {
                 $bookId = $stmt->insert_id;
                 if (generateBookFiles($bookId, $bookname, $author, $image, $description, $publishYear, $genres, $bookNumber)) {
-                    // Redirect to the librarian dashboard after successfully adding the book
+                    // Redirect to dashboard after success
                     header("Location: Dashboard(Librarian).php");
                     exit();
                 } else {
-                    echo "<script>alert('Error generating book files.');</script>";
+                    // Error generating book files
+                    $_SESSION['error_message'] = 'Error generating book files.';
+                    header("Location: Dashboard(Librarian).php");
+                    exit();
                 }
             } else {
-                echo "<script>alert('Error: " . $stmt->error . "');</script>";
+                // Error with SQL execution
+                $_SESSION['error_message'] = 'Error inserting the book: ' . $stmt->error;
+                header("Location: Dashboard(Librarian).php");
+                exit();
             }
-            
 
             $stmt->close();
         }

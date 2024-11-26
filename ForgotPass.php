@@ -1,3 +1,11 @@
+<?php
+session_start();
+if (isset($_SESSION['error_message'])) {
+    echo "<script>alert('" . $_SESSION['error_message'] . "');</script>";
+    unset($_SESSION['error_message']);
+}
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -23,7 +31,7 @@
 
                 <script>
                     function redirectToMainpage() {
-                        window.location.href = "Mainpage.html";
+                        window.location.href = "Mainpage.php";
                     }
                 </script>
 

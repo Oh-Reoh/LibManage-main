@@ -78,6 +78,10 @@ if (!isset($_SESSION['username'])) {
 			<a href="BorrowBook.php">
 				<button class="add-book-btn">Borrow a Book</button>
 			</a>
+
+			<a href="ReturnBook.php">
+			<button class="add-book-btn">Returned a Book</button>
+			</a>
 			
 			<a href="#" class="nav-link">
 				<i class='bx bxs-bell icon' ></i>

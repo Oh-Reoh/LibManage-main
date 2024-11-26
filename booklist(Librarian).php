@@ -1,3 +1,19 @@
+<?php
+$host = 'localhost';
+$dbname = 'libmanagedb';
+$username = 'root';
+$password = '';
+
+$pdo = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
+$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+$stmt = $pdo->query("SELECT bookname, author, genre, 
+    DATE_FORMAT(issueddate, '%Y-%m-%d') AS issueddate, 
+    publishYear, description
+    FROM tbl_bookinfo");
+?>
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -69,13 +85,6 @@
 				</div>
 			</form>
 
-    
-			<!-- Add Book Button -->
-			<button class="add-book-btn">Add Book</button>
-			
-			<a href="ReturnBook.php">
-			<button class="add-book-btn">Returned a Book</button>
-			</a>
 
 			<a href="#" class="nav-link">
 				<i class='bx bxs-bell icon' ></i>
@@ -95,7 +104,7 @@
 
 		<!-- MAIN -->
 		<main>
-			<h1 class="title">Books Transaction History</h1>
+			<h1 class="title">Books</h1>
 			
 			<!-- INFO DATA -->
 			<div class="info-data">
@@ -149,65 +158,36 @@
 				<div class="container">
 					<div class="table-wrapper">
 						<div class="content-data">
-		
 							<table>
 								<thead>
 									<tr>
 										<th>BOOK NAME</th>
 										<th>AUTHOR</th>
-										<th>BOOK STATUS</th>
+										<th>GENRE</th>
+										<th>NUMBER OF COPIES</th>
 										<th>ISSUED DATE</th>
-										<th>RETURN DATE</th>
-										<th>STATUS</th>
+										<th>DESCRIPTION</th>
 									</tr>
 								</thead>
 								<tbody>
-								<tbody>
-								<?php
-									$host = 'localhost';
-									$dbname = 'libmanagedb';
-									$username = 'root';
-									$password = '';
-
-									$pdo = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
-									$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
-									$stmt = $pdo->query("SELECT *,
-														DATE_FORMAT(issueddate, '%Y-%m-%d') AS formatted_issueddate,
-														CASE 
-															WHEN bookisinuse = 0 THEN 'on shelf'
-															WHEN bookisinuse = 1 THEN 'borrowed'
-															ELSE 'Unknown'
-														END AS book_status,
-														CASE 
-															WHEN returndate IS NULL OR returndate = '' THEN 'pending'
-															ELSE 'returned'
-														END AS return_status
-													FROM tbl_bookinfo_logs;");
-									
+									<?php
 									while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-										$statusColor = ($row['return_status'] == 'pending') ? 'crimson' : 'green';
-										
 										echo "<tr>
-												<td><a href='book{$row['id']}.php'>{$row['bookname']}</a></td>
-												<td>{$row['author']}</td>
-												<td>{$row['book_status']}</td>
-												<td>{$row['formatted_issueddate']}</td>
-												<td>{$row['returndate']}</td>
-												<td style='background-color: $statusColor; color: white;'>{$row['return_status']}</td>
+												<td>" . htmlspecialchars($row['bookname']) . "</td>
+												<td>" . htmlspecialchars($row['author']) . "</td>
+												<td>" . htmlspecialchars($row['genre']) . "</td>
+												<td>" . htmlspecialchars($row['issueddate']) . "</td>
+												<td>" . htmlspecialchars($row['publishYear']) . "</td>
+												<td>" . htmlspecialchars($row['description']) . "</td>
 											</tr>";
 									}
-								?>
-
-								</tbody>
+									?>
 								</tbody>
 							</table>
-		
 						</div>
 					</div>
 				</div>
 			</div>
-
 
 		</main>
 		<!-- MAIN -->
@@ -244,7 +224,6 @@
             </div>
         </div>
     </footer>
-
 	<script src="booklist(Librarian).js"></script>
 </body>
 </html>

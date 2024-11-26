@@ -9,6 +9,14 @@ if (!isset($_SESSION['username'])) {
     header('Location: LoginPage.php');
     exit();
 }
+
+// Check if there is an error message to display
+if (isset($_SESSION['error_message'])) {
+    echo "<script>alert('" . $_SESSION['error_message'] . "');</script>";
+    // Clear the error message from the session after it is displayed
+    unset($_SESSION['error_message']);
+}
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -69,15 +77,13 @@ if (!isset($_SESSION['username'])) {
 		<!-- NAVBAR -->
 		<nav>
 			<i class='bx bx-menu toggle-sidebar' ></i>
-			<form action="#">
+			<form id="searchForm" action="#" method="GET">
 				<div class="form-group">
-					<input type="text" placeholder="Search books & members">
-					<style>
-						input[type="text"]::placeholder {
-						    color: #6F58DA;
-						}
-					</style>
-					<i class='bx bx-search icon' ></i>
+					<!-- Search Input Field -->
+					<input type="text" id="searchInput" placeholder="Search books & members" oninput="searchFunction()">
+					<i class='bx bx-search icon'></i>
+					<!-- Placeholder for search results -->
+					<div id="searchResults" class="dropdown"></div>
 				</div>
 			</form>
 
@@ -100,7 +106,7 @@ if (!isset($_SESSION['username'])) {
 				</ul>
 			</div>
 		</nav>
-		<!-- NAVBAR -->
+		<!-- NAVBAR END -->
 
 		<!-- MAIN -->
 		<main>
@@ -111,12 +117,28 @@ if (!isset($_SESSION['username'])) {
 				<div class="card">
 					<div class="head">
 						<div>
-							<h2>4</h2>
+							<?php
+							// Database connection
+							$host = 'localhost'; // your host
+							$dbname = 'libmanagedb'; // your database name
+							$username = 'root'; // your username
+							$password = ''; // your password
+
+							// Create a PDO instance
+							$pdo = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
+							$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+							// Query to count the number of readers (role = 'regular')
+							$stmt = $pdo->query("SELECT COUNT(*) FROM tbl_userinfo WHERE role = 'regular'");
+							$totalReaders = $stmt->fetchColumn(); // Fetch the count
+							?>
+							<h2><?php echo $totalReaders; ?></h2> <!-- Display total readers -->
+							<img src="images/icon pending-icon.png" alt="Reader Icon" class="icon reader-icon">
 							<p>Total Readers</p>
 						</div>
-						<img src="images/icon pending-icon.png" alt="Reader Icon" class="icon reader-icon">
 					</div>
 				</div>
+
 			
 				<div class="card">
 					<div class="head">
@@ -169,11 +191,10 @@ if (!isset($_SESSION['username'])) {
 							<table>
 								<thead>
 									<tr>
-										<th>ID</th>
 										<th>USERNAME</th>
 										<th>EMAIL</th>
 										<th>DEPARTMENT</th>
-										<th>ROLE</th>
+										<th>BOOKS BORROWED</th>
 									</tr>
 								</thead>
 								<tbody>
@@ -188,15 +209,25 @@ if (!isset($_SESSION['username'])) {
 									$pdo = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
 									$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-									// Query to select all users from the database
-									$stmt = $pdo->query("SELECT * FROM tbl_userinfo");
+									// Query to fetch readers' information, department, and books borrowed
+									$stmt = $pdo->query("
+										SELECT u.username, u.email, u.department, GROUP_CONCAT(b.bookname SEPARATOR ', ') AS books_borrowed
+										FROM tbl_userinfo u
+										LEFT JOIN tbl_bookinfo_logs l ON u.username = l.borrowedby
+										LEFT JOIN tbl_bookinfo b ON l.bookname = b.bookname
+										WHERE u.role = 'regular'
+										GROUP BY u.id
+									");
+
 									while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+										// Check if the email exceeds 10 characters and truncate with '...'
+										$email = strlen($row['email']) > 10 ? substr($row['email'], 0, 10) . '...' : $row['email'];
+
 										echo "<tr>
-												<td>{$row['id']}</td>
 												<td>{$row['username']}</td>
-												<td>{$row['email']}</td>
+												<td>{$email}</td>
 												<td>{$row['department']}</td>
-												<td>{$row['role']}</td>
+												<td>{$row['books_borrowed']}</td>
 											</tr>";
 									}
 									?>
@@ -205,6 +236,10 @@ if (!isset($_SESSION['username'])) {
 						</div>
 					</div>
 				</div>
+
+
+
+
 
 				<!-- Books List -->
 				<div class="content-data">
@@ -265,6 +300,34 @@ if (!isset($_SESSION['username'])) {
 	</section>
 	
 	</div>
+	<footer>
+        <div class="footer-container">
+            <div class="footer-left">
+                <div class="footer-description">
+                    <img src="logo.png" alt="Libmanage Logo" class="footer-logo">
+                    <p>Where Stories Live: <span class="second-line">Find And Borrow Your Next Great Read.</span></p>
+                </div>
+            </div>
+    
+            <div class="footer-center">
+                <p>&copy; 2024</p>
+            </div>
+    
+            <div class="footer-right">
+                <p>Follow Us</p>
+                <div class="footer-socials">
+                    <a href="#"><img src="icon-ig.png" alt="Instagram"></a>
+                    <a href="#"><img src="icon-fb.png" alt="Facebook"></a>
+                    <a href="#"><img src="icon-tw.png" alt="Twitter"></a>
+                </div>
+            </div>
+            <div class="footer-right-most">
+                <div class="footer-contact">
+                    <p>Call Us<span class="second-line">09928571488</span></p>
+                </div>
+            </div>
+        </div>
+    </footer>
 
 	<!-- Add Book Modal -->
 	<div id="addBookModal" class="modal">
@@ -352,6 +415,56 @@ if (!isset($_SESSION['username'])) {
 				}
 			});
 		});
+	</script>
+
+	<script>
+		// Function to handle the search input event
+		function searchFunction() {
+			const searchTerm = document.getElementById("searchInput").value;
+			const searchResults = document.getElementById("searchResults");
+			
+			if (searchTerm.length > 0) {
+				fetchSearchResults(searchTerm);
+			} else {
+				// Clear results if search is empty
+				searchResults.innerHTML = '';
+				searchResults.style.display = 'none';
+			}
+		}
+
+		function fetchSearchResults(searchTerm) {
+			fetch('search.php?query=' + encodeURIComponent(searchTerm))
+				.then(response => response.json())
+				.then(data => {
+					const searchResults = document.getElementById("searchResults");
+					searchResults.innerHTML = ''; // Clear previous results
+
+					if (data.success) {
+						const ul = document.createElement('ul');
+						if (data.type === 'books') {
+							data.results.forEach(book => {
+								const li = document.createElement('li');
+								li.textContent = `${book.bookname} by ${book.author}`;
+								ul.appendChild(li);
+							});
+						} else if (data.type === 'users') {
+							data.results.forEach(user => {
+								const li = document.createElement('li');
+								li.textContent = `${user.username} (${user.email})`;
+								ul.appendChild(li);
+							});
+						}
+						searchResults.appendChild(ul);
+						searchResults.style.display = 'block'; // Show dropdown
+					} else {
+						searchResults.innerHTML = '<ul><li>No results found</li></ul>';
+						searchResults.style.display = 'block'; // Show dropdown
+					}
+				})
+				.catch(error => {
+					console.error('Error fetching search results:', error);
+				});
+		}
 	</script>
 </body>
 </html>

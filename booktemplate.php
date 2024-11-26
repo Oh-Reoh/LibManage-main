@@ -56,6 +56,7 @@ $booklistLink = $role === 'librarian' ? 'booklist(Librarian).php' : 'booklist(Re
                 </li>
             </ul>
         </section>
+
         <!-- Main Content -->
         <section id="content">
             <nav>
@@ -67,13 +68,22 @@ $booklistLink = $role === 'librarian' ? 'booklist(Librarian).php' : 'booklist(Re
                     </div>
                 </form>
 
-                <!-- Conditionally Show Edit/Delete Buttons -->
+               <!-- Conditionally Show Edit/Delete Buttons -->
                 <?php if ($role === 'librarian'): ?>
-                    <button class="editBookBtn action-button add-book-button" data-book-id="<?php echo htmlspecialchars($book['id']); ?>">Edit</button>
+                    <button class="editBookBtn action-button add-book-button" 
+                            data-book-id="<?php echo htmlspecialchars($book['id']); ?>" 
+                            data-book-title="<?php echo htmlspecialchars($book['title']); ?>"
+                            onclick="openEditPopup(<?php echo htmlspecialchars($book['id']); ?>)">
+                        Edit
+                    </button>
                     <button class="deleteBookBtn action-button delete-button add-book-button" 
                             data-book-id="<?php echo htmlspecialchars($book['id']); ?>" 
-                            data-book-title="<?php echo htmlspecialchars($book['title']); ?>">Delete</button>
+                            data-book-title="<?php echo htmlspecialchars($book['title']); ?>"
+                            onclick="openDeletePopup(<?php echo htmlspecialchars($book['id']); ?>, '<?php echo htmlspecialchars($book['title']); ?>')">
+                        Delete
+                    </button>
                 <?php endif; ?>
+
 
                 <a href="#" class="nav-link">
                     <i class='bx bxs-bell icon'></i>
@@ -88,6 +98,7 @@ $booklistLink = $role === 'librarian' ? 'booklist(Librarian).php' : 'booklist(Re
                     </ul>
                 </div>
             </nav>
+
             <main>
                 <h1 class="title"><a href="<?php echo $booklistLink; ?>">Books</a> >> <?php echo htmlspecialchars($book['title']); ?></h1>
                 <div class="data">
@@ -120,6 +131,7 @@ $booklistLink = $role === 'librarian' ? 'booklist(Librarian).php' : 'booklist(Re
                             <p><?php echo htmlspecialchars($book['history']); ?></p>
                         </div>
                     </div>
+
                     <div class="right-column">
                         <div class="content-data book-overview">
                             <div class="book-overview-content">
@@ -140,6 +152,41 @@ $booklistLink = $role === 'librarian' ? 'booklist(Librarian).php' : 'booklist(Re
             </main>
         </section>
     </div>
+
+    <!-- Edit Book Modal -->
+    <div id="editBookPopup" class="modal">
+        <div class="modal-content">
+            <span class="close edit-close" onclick="closeEditPopup()">&times;</span>
+            <h2>Edit Book</h2>
+            <form id="editBookForm" action="editbook.php" method="POST">
+                <input type="hidden" name="bookId" id="editBookId">
+                <label for="bookname">Book Name:</label>
+                <input type="text" name="bookname" id="editBookName" required>
+                <label for="author">Author:</label>
+                <input type="text" name="author" id="editAuthor" required>
+                <label for="description">Description:</label>
+                <textarea name="description" id="editDescription" required></textarea>
+                <button type="submit" class="modal-submit-btn">Save Changes</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Book Modal -->
+    <div id="deleteBookPopup" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeDeletePopup()">&times;</span>
+            <h2>Are you sure you want to delete this book?</h2>
+            <form action="deletebook.php" method="POST">
+                <input type="hidden" name="bookId" id="deleteBookId">
+                <p id="deleteBookTitle"></p>
+                <div class="button-container">
+                    <button type="submit" class="modal-delete-btn">Yes, Delete</button>
+                    <button type="button" onclick="closeDeletePopup()" class="modal-delete-btn">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <footer>
         <div class="footer-container">
             <div class="footer-left">
@@ -161,8 +208,7 @@ $booklistLink = $role === 'librarian' ? 'booklist(Librarian).php' : 'booklist(Re
             </div>
         </div>
     </footer>
-    
-    <script src="pop-up.js"></script>
 
+    <script src="pop-up.js"></script>
 </body>
 </html>

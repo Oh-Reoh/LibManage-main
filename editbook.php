@@ -15,9 +15,16 @@ if ($conn->connect_error) {
 }
 
 // Initialize variables
-$bookId = isset($_GET['bookId']) ? intval($_GET['bookId']) : 0;
-$bookData = [];
+$bookId = 0;
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Fetch book ID from POST request (form submission)
+    $bookId = intval($_POST['bookId']);
+} elseif (isset($_GET['bookId'])) {
+    // Fetch book ID from GET request (initial page load)
+    $bookId = intval($_GET['bookId']);
+}
 
+$bookData = [];
 // Fetch the book details if bookId is provided
 if ($bookId > 0) {
     $stmt = $conn->prepare("SELECT * FROM tbl_bookinfo WHERE id = ?");
