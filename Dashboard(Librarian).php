@@ -5,10 +5,13 @@ session_start();
 $_SESSION['role'] = 'librarian';
 
 // Redirect to the login page if the user is not logged in
-if (!isset($_SESSION['username'])) {
+if (!isset($_SESSION['user_id'])) {
     header('Location: LoginPage.php');
     exit();
 }
+
+$userId = $_SESSION['user_id']; // Get the logged-in user's ID
+
 
 // Check if there is an error message to display
 if (isset($_SESSION['error_message'])) {
@@ -16,6 +19,10 @@ if (isset($_SESSION['error_message'])) {
     // Clear the error message from the session after it is displayed
     unset($_SESSION['error_message']);
 }
+
+include('getUserInfo.php');
+$profilePic = isset($userData['profile_picture']) && !empty($userData['profile_picture']) ? $userData['profile_picture'] : 'images/default.jpg';
+
 
 ?>
 <!DOCTYPE html>
@@ -62,11 +69,6 @@ if (isset($_SESSION['error_message'])) {
 				</a>
 			</li>
 
-			<li>
-				<a href="#" class="active">
-					<img src="images/settings_icon.png" alt="Dashboard Icon" class="icon-therest"> Settings
-				</a>
-			</li>
 
 		</ul>
 		
@@ -91,10 +93,9 @@ if (isset($_SESSION['error_message'])) {
 
 
 			<div class="profile">
-				<img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?ixid=MnwxMjA3fDB8MHxzZWFyY2h8NHx8cGVvcGxlfGVufDB8fDB8fA%3D%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60" alt="">
+			<img src="<?php echo $profilePic; ?>" alt="Profile Picture" class="profile-img">
 				<ul class="profile-link">
 					<li><a href="profile.php"><i class='bx bxs-user-circle icon' ></i> Profile</a></li>
-					<li><a href="#"><i class='bx bxs-cog' ></i> Settings</a></li>
 					<li><a href="Mainpage.php"><i class='bx bxs-log-out-circle' ></i> Logout</a></li>
 				</ul>
 			</div>
@@ -140,26 +141,6 @@ if (isset($_SESSION['error_message'])) {
 							<p>Pending Requests</p>
 						</div>
 						<img src="images/pending-icon.png" alt="Pending Readers Icon" class="icon pending-icon">
-					</div>
-				</div>
-			
-				<div class="card">
-					<div class="head">
-						<div>
-							<h2>7</h2>
-							<p>Borrowed Books</p>
-						</div>
-						<img src="images/borrowed-icon.png" alt="Borrowed Books Icon" class="icon borrowed-icon">
-					</div>
-				</div>
-			
-				<div class="card">
-					<div class="head">
-						<div>
-							<h2>2</h2>
-							<p>Overdue Books</p>
-						</div>
-						<img src="images/overdue-icon.png" alt="Overdue Books Icon" class="icon overdue-icon">
 					</div>
 				</div>
 			</div>

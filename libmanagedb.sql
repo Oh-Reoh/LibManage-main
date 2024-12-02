@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Nov 19, 2024 at 03:23 AM
+-- Generation Time: Dec 02, 2024 at 04:29 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -45,7 +45,9 @@ CREATE TABLE `tbl_bookinfo` (
 --
 
 INSERT INTO `tbl_bookinfo` (`id`, `bookname`, `author`, `issueddate`, `isinuse`, `image`, `bookNumber`, `publishYear`, `genre`, `description`) VALUES
-(1, 'Murder on the Orient Express', 'Agatha Christie', '2024-11-19', 0, 'murder-on-the-orient-express.jpg', '1', 1934, 'Novel, Mystery', 'Murder on the Orient Express is undoubtedly one of Agatha Christie&#039;s greatest mystery novels.\r\n\r\nJust after midnight, a snowdrift stops the Orient Express in its tracks. The luxurious train is surprisingly full for the time of the year, but by the morning it is one passenger fewer. An American tycoon lies dead in his compartment, stabbed a dozen times, his door locked from the inside. Isolated and with a killer in their midst, detective Hercule Poirot must identify the murderer – in case he or she decides to strike again.');
+(1, 'Murder on the Orient Express', 'Agatha Christie', '2024-11-28', 0, 'murder-on-the-orient-express.jpg', '1', 1934, 'Novel, Mystery', 'Murder on the Orient Express is undoubtedly one of Agatha Christie&#039;s greatest mystery novels.\r\n\r\nJust after midnight, a snowdrift stops the Orient Express in its tracks. The luxurious train is surprisingly full for the time of the year, but by the morning it is one passenger fewer. An American tycoon lies dead in his compartment, stabbed a dozen times, his door locked from the inside. Isolated and with a killer in their midst, detective Hercule Poirot must identify the murderer – in case he or she decides to strike again.'),
+(2, 'Harry Potter and the Goblet of Fire', 'J.K Rowling', '2024-11-28', 0, 'Harry_Potter_and_the_Goblet_of_Fire_cover.png', '2', 2005, 'Novel, Fantasy', 'Harry Potter and the Goblet of Fire is a fantasy novel written by the British author J. K. Rowling. It is the fourth novel in the Harry Potter series'),
+(3, 'Life of Pi', 'Yann Martel', '2024-11-28', 0, 'life of pi.jpg', '3', 2001, 'Novel, Adventure', 'Life of Pi is a Canadian philosophical novel by Yann Martel published in 2001. The protagonist is Piscine Molitor &quot;Pi&quot; Patel, an Indian boy from Pondicherry, India, who explores issues of spirituality and metaphysics from an early age.');
 
 -- --------------------------------------------------------
 
@@ -71,15 +73,12 @@ CREATE TABLE `tbl_bookinfo_logs` (
 --
 
 INSERT INTO `tbl_bookinfo_logs` (`id`, `bookname`, `author`, `issueddate`, `returndate`, `borrowedby`, `returnedby`, `bookisinuse`, `requestby`, `isrequest`) VALUES
-(4, 'Book1', 'Jay', '2024-11-14', '2024-11-14', 'Jay', 'Jay', 0, 'Jay', 0),
-(5, 'Book2', 'Jay2', '2024-11-14', '', 'User3', '', 1, 'User3', 1),
-(6, 'Book4', 'sample1', '2024-11-14', '', 'lacre', '', 1, 'lacre', 1),
-(13, 'Book2', 'Jay2', '', '2024-11-14', 'Jay', '', 0, 'Jay', 0),
-(14, 'Book6', 'Otin', '2024-11-14', '', 'Ethan Pisot', '', 1, 'Ethan Pisot', 1),
-(15, 'Book6', 'Otin', '', '2024-11-14', 'Ethan Pisot', '', 0, 'Ethan Pisot', 0),
-(16, 'Book7', 'Baho', '2024-11-14', '', 'Ethan Pisoton', '', 1, 'Ethan Pisoton', 1),
-(17, 'Book9', 'author6', '2024-11-15', '', 'Ethan lacker', '', 1, 'Ethan lacker', 1),
-(18, 'Book9', 'author6', '', '2024-11-15', 'Ethan lacker', '', 0, 'Ethan lacker', 0);
+(1, 'Murder on the Orient Express', 'Agatha Christie', '2024-11-28', '', 'Reader1', '', 1, 'Reader1', 1),
+(2, 'Murder on the Orient Express', 'Agatha Christie', '2024-11-28', '', 'Reader1', '', 1, 'Reader1', 1),
+(3, 'Murder on the Orient Express', 'Agatha Christie', '', '2024-11-28', 'Reader1', '', 0, 'Reader1', 0),
+(4, 'Murder on the Orient Express', 'Agatha Christie', '', '2024-11-28', 'Reader1', '', 0, 'Reader1', 0),
+(5, 'Murder on the Orient Express', 'Agatha Christie', '2024-11-28', '', 'ethan 1', '', 1, 'ethan 1', 1),
+(6, 'Murder on the Orient Express', 'Agatha Christie', '', '2024-11-28', 'ethan 1', '', 0, 'ethan 1', 0);
 
 -- --------------------------------------------------------
 
@@ -145,21 +144,25 @@ CREATE TABLE `tbl_userinfo` (
   `id` int(155) NOT NULL,
   `username` varchar(155) NOT NULL,
   `email` varchar(155) NOT NULL,
-  `password` varchar(155) NOT NULL,
+  `password` varchar(255) NOT NULL,
   `department` varchar(155) NOT NULL,
-  `role` enum('regular','librarian') NOT NULL DEFAULT 'regular'
+  `role` enum('regular','librarian') NOT NULL DEFAULT 'regular',
+  `profile_picture` varchar(255) DEFAULT 'images/default.jpg',
+  `full_name` varchar(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `tbl_userinfo`
 --
 
-INSERT INTO `tbl_userinfo` (`id`, `username`, `email`, `password`, `department`, `role`) VALUES
-(1, 'user1', 'user1@gmail.com', '$2y$10$4yuPGB6zyTss/OHSqsZ1OOqYYvsspMP1FsM.lKm4TGgNrqk2Fk3MO', 'IT', 'regular'),
-(2, 'jay', 'jay@gmail.com', '$2y$10$amtSxTfU/1B9/dLOKMdVt.nHSKBuT1eVr5SV.urRPYnztDyPir54a', 'Engineering', 'regular'),
-(3, 'John', 'John@gmail.com', '$2y$10$/D4b/kd.eXpE00IkZO/WJ.Jo7pERQwcMvT9wraQ/yIr3/lfjqsVTy', 'BSIT', 'regular'),
-(5, 'regular1', 'regular@gmail.com', '$2y$10$ShyuS9i3UPOByOnvuY8WB.fZAEWI1gq7ZdGp0lSy40f0UNjPED3tS', 'BSIT', 'regular'),
-(6, 'admin', 'admin@gmail.com', '$2y$10$VnYm.Y9K7.UOWFVarDEYEO52PrhMYDylQ2bGjbznsAiMwaJd0n6ma', 'Admin', 'librarian');
+INSERT INTO `tbl_userinfo` (`id`, `username`, `email`, `password`, `department`, `role`, `profile_picture`, `full_name`) VALUES
+(1, 'user1', 'user1@gmail.com', '$2y$10$4yuPGB6zyTss/OHSqsZ1OOqYYvsspMP1FsM.lKm4TGgNrqk2Fk3MO', 'IT', 'regular', 'images/default.jpg', ''),
+(2, 'jay', 'jay@gmail.com', '$2y$10$amtSxTfU/1B9/dLOKMdVt.nHSKBuT1eVr5SV.urRPYnztDyPir54a', 'Engineering', 'regular', 'images/default.jpg', ''),
+(3, 'John', 'John@gmail.com', '$2y$10$/D4b/kd.eXpE00IkZO/WJ.Jo7pERQwcMvT9wraQ/yIr3/lfjqsVTy', 'BSIT', 'regular', 'images/default.jpg', ''),
+(5, 'regular1', 'regular@gmail.com', '$2y$10$ShyuS9i3UPOByOnvuY8WB.fZAEWI1gq7ZdGp0lSy40f0UNjPED3tS', 'BSIT', 'regular', 'images/default.jpg', ''),
+(6, 'admin', 'admin@gmail.com', '$2y$10$WXZ9.7bFiULsRDd.ok2lluGcZ1lFM1azU6oMQg1D5/x/zskAQFTja', 'Admin', 'librarian', 'profilePictures/674d76b7c1488.jpg', 'John Admin'),
+(7, 'Reader1', 'Reader@gmail.com', '$2y$10$RN8shrsIXgSMYakwDMas7OuQdX0P2lVi/dPnGGWSUc4wbjFCZySNO', 'BSIT', 'regular', 'images/default.jpg', ''),
+(8, 'admin', 'admin@gmail.com', '$2y$10$rIUYE9Jm/he8C4Sn.AObr.44CC5jy.hgnp24YV4QfA6W3wjEtsPnq', 'Admin', 'regular', 'images/default.jpg', 'John Admin');
 
 --
 -- Indexes for dumped tables
@@ -199,13 +202,13 @@ ALTER TABLE `tbl_userinfo`
 -- AUTO_INCREMENT for table `tbl_bookinfo`
 --
 ALTER TABLE `tbl_bookinfo`
-  MODIFY `id` int(155) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(155) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT for table `tbl_bookinfo_logs`
 --
 ALTER TABLE `tbl_bookinfo_logs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `tbl_genres`
@@ -217,7 +220,7 @@ ALTER TABLE `tbl_genres`
 -- AUTO_INCREMENT for table `tbl_userinfo`
 --
 ALTER TABLE `tbl_userinfo`
-  MODIFY `id` int(155) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` int(155) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

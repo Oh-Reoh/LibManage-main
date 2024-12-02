@@ -234,4 +234,47 @@ document.addEventListener("DOMContentLoaded", () => {
             });
     }
     
+
+    // Handle Update Profile Form Submission
+    const updateProfileForm = document.querySelector("#updateProfileModal form");
+    if (updateProfileForm) {
+        updateProfileForm.addEventListener("submit", (event) => {
+            event.preventDefault(); // Prevent default form submission
+
+            const formData = new FormData(updateProfileForm);
+
+            fetch("update_profile.php", {
+                method: "POST",
+                body: formData,
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error("Network response was not ok");
+                    }
+                    return response.text(); // Get the response as text
+                })
+                .then(text => {
+                    console.log("Response Text:", text);
+                    let data;
+                    try {
+                        data = JSON.parse(text);
+                    } catch (err) {
+                        console.error("Error parsing JSON:", err);
+                        alert("Failed to parse server response.");
+                        return;
+                    }
+
+                    if (data.success) {
+                        alert("Profile updated successfully.");
+                        location.reload(); // Refresh the page
+                    } else {
+                        alert("Error updating profile: " + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error("Error submitting update profile form:", error);
+                    alert("An error occurred while updating the profile.");
+                });
+        });
+    }
 });

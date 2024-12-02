@@ -55,7 +55,7 @@
             </div>
     
             <div class="footer-center">
-                <p>&copy; 2024</p>
+                <p>&copy; ALPHA ONE 2024</p>
             </div>
     
             <div class="footer-right">
