@@ -242,21 +242,33 @@ tooltip: {
 document.addEventListener("DOMContentLoaded", () => {
     const searchInput = document.querySelector(".search-books input");
     const searchIcon = document.querySelector(".search-books .icon");
-    const bookRows = document.querySelectorAll("tbody tr");
 
-    // Confirm elements are selected
-    console.log("Search Input:", searchInput);
-    console.log("Search Icon:", searchIcon);
-    console.log("Book Rows:", bookRows.length);
+    // Ensure the searchInput element exists before adding event listener
+    if (searchInput) {
+        searchInput.addEventListener("keypress", (e) => {
+            if (e.key === "Enter") {
+                e.preventDefault(); // Prevent form submission if within a form
+                searchBooks();
+            }
+        });
+    } else {
+        console.warn("Search input element not found.");
+    }
+
+    // Ensure the searchIcon element exists before adding event listener
+    if (searchIcon) {
+        searchIcon.addEventListener("click", searchBooks);
+    } else {
+        console.warn("Search icon element not found.");
+    }
 
     // Function to perform the search
     function searchBooks() {
         const searchQuery = searchInput.value.toLowerCase().trim();
         let bookFound = false;
 
-        console.log("Search Query:", searchQuery);
-
         // Loop through each book row to check for a match
+        const bookRows = document.querySelectorAll("tbody tr");
         bookRows.forEach(row => {
             const bookTitle = row.querySelector("td a").textContent.toLowerCase();
 
@@ -264,7 +276,6 @@ document.addEventListener("DOMContentLoaded", () => {
             if (bookTitle.includes(searchQuery) && searchQuery) {
                 row.style.display = ""; // Show the row if it matches
                 bookFound = true;
-                console.log("Book Found:", bookTitle);
             } else {
                 row.style.display = "none"; // Hide non-matching rows
             }
@@ -276,18 +287,7 @@ document.addEventListener("DOMContentLoaded", () => {
         } else if (!searchQuery) {
             // If search input is cleared, show all books
             bookRows.forEach(row => (row.style.display = ""));
-            console.log("Cleared search, displaying all books.");
         }
     }
-
-    // Listen for Enter key on the search input
-    searchInput.addEventListener("keypress", (e) => {
-        if (e.key === "Enter") {
-            e.preventDefault(); // Prevent form submission if within a form
-            searchBooks();
-        }
-    });
-
-    // Listen for click on the search icon
-    searchIcon.addEventListener("click", searchBooks);
 });
+

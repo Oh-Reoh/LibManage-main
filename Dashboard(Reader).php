@@ -23,6 +23,7 @@ if (!isset($_SESSION['username'])) {
     <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900&display=swap" rel="stylesheet">
 
 	<link rel="stylesheet" href="Dashboard(Reader).css">
+	<link rel="stylesheet" href="search.css">
 	<title>Dashboard</title>
 </head>
 <body>
@@ -62,25 +63,20 @@ if (!isset($_SESSION['username'])) {
 		<!-- NAVBAR -->
 		<nav>
 			<i class='bx bx-menu toggle-sidebar' ></i>
-			<form action="#">
+			<form id="searchForm" action="#" method="GET">
 				<div class="form-group">
-					<input type="text" placeholder="Search books & members">
-					<style>
-						input[type="text"]::placeholder {
-						    color: #6F58DA;
-						}
-					</style>
-					<i class='bx bx-search icon' ></i>
+					<input type="text" id="searchInput" placeholder="Search books & members" oninput="searchFunction()">
+					<i class="bx bx-search icon"></i>
+					<div id="searchResults" class="dropdown"></div> <!-- Dropdown for results -->
 				</div>
 			</form>
-
 
 			<a href="BorrowBook.php">
 				<button class="add-book-btn">Borrow a Book</button>
 			</a>
 
 			<a href="ReturnBook.php">
-			<button class="add-book-btn">Returned a Book</button>
+			<button class="add-book-btn">Return a Book</button>
 			</a>
 			
 			<a href="#" class="nav-link">
@@ -233,5 +229,7 @@ if (!isset($_SESSION['username'])) {
     </footer>
 
 	<script src="dashboard.js"></script>
+
+	<script src="search.js"></script>
 </body>
 </html>

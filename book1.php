@@ -3,14 +3,16 @@ session_start();
 
 // Sample book details (These placeholders will be dynamically replaced during book creation)
 $book = [
-    'id' => '{{ID}}', // Ensure this is dynamically replaced
-    'title' => '{{NAME}}',
-    'author' => '{{AUTHOR}}',
-    'year' => '{{YEAR}}',
-    'genre' => '{{GENRES}}',
-    'number' => '{{BOOKNUMBER}}',
-    'image' => '{{IMAGE}}',
-    'description' => '{{DESCRIPTION}}',
+    'id' => '1', // Ensure this is dynamically replaced
+    'title' => 'Murder on the Orient Express',
+    'author' => 'Agatha Christie',
+    'year' => '1934',
+    'genre' => 'novel, mystery',
+    'number' => '1',
+    'image' => 'murder-on-the-orient-express.jpg',
+    'description' => 'Murder on the Orient Express is undoubtedly one of Agatha Christie&#039;s greatest mystery novels.
+
+Just after midnight, a snowdrift stops the Orient Express in its tracks. The luxurious train is surprisingly full for the time of the year, but by the morning it is one passenger fewer. An American tycoon lies dead in his compartment, stabbed a dozen times, his door locked from the inside. Isolated and with a killer in their midst, detective Hercule Poirot must identify the murderer – in case he or she decides to strike again.',
     'history' => 'No history available yet.',
     'rating' => '4.1',
     'stars' => '★★★★☆',

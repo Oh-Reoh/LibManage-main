@@ -32,6 +32,7 @@ if (isset($_SESSION['error_message'])) {
 
 	<link rel="stylesheet" href="Dashboard(Librarian).css">
 	<link rel="stylesheet" href="pop-up_add.css">
+	<link rel="stylesheet" href="search.css">
 	<title>Dashboard</title>
 </head>
 <body>
@@ -79,23 +80,15 @@ if (isset($_SESSION['error_message'])) {
 			<i class='bx bx-menu toggle-sidebar' ></i>
 			<form id="searchForm" action="#" method="GET">
 				<div class="form-group">
-					<!-- Search Input Field -->
 					<input type="text" id="searchInput" placeholder="Search books & members" oninput="searchFunction()">
-					<i class='bx bx-search icon'></i>
-					<!-- Placeholder for search results -->
-					<div id="searchResults" class="dropdown"></div>
+					<i class="bx bx-search icon"></i>
+					<div id="searchResults" class="dropdown"></div> <!-- Dropdown for results -->
 				</div>
 			</form>
-
     
 			<!-- Add Book Button -->
 			<button id="addBookBtn" class="add-book-btn">Add Book</button>
 
-			
-			<a href="#" class="nav-link">
-				<i class='bx Fbxs-bell icon' ></i>
-				<span class="badge">5</span>
-			</a>
 
 			<div class="profile">
 				<img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?ixid=MnwxMjA3fDB8MHxzZWFyY2h8NHx8cGVvcGxlfGVufDB8fDB8fA%3D%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60" alt="">
@@ -144,7 +137,7 @@ if (isset($_SESSION['error_message'])) {
 					<div class="head">
 						<div>
 							<h2>1</h2>
-							<p>Pending Readers</p>
+							<p>Pending Requests</p>
 						</div>
 						<img src="images/pending-icon.png" alt="Pending Readers Icon" class="icon pending-icon">
 					</div>
@@ -176,14 +169,6 @@ if (isset($_SESSION['error_message'])) {
 				<div class="content-data">
 					<div class="head">
 						<h3>Readers List</h3>
-						<div class="menu">
-							<i class='bx bx-dots-horizontal-rounded icon'></i>
-							<ul class="menu-link">
-								<li><a href="#">Edit</a></li>
-								<li><a href="#">Save</a></li>
-								<li><a href="#">Remove</a></li>
-							</ul>
-						</div>
 					</div>
 
 					<div class="container">
@@ -248,9 +233,8 @@ if (isset($_SESSION['error_message'])) {
 						<div class="menu">
 							<i class='bx bx-dots-horizontal-rounded icon'></i>
 							<ul class="menu-link">
-								<li><a href="#">Edit</a></li>
-								<li><a href="#">Save</a></li>
-								<li><a href="#">Remove</a></li>
+								<li><a href="#" onclick="openChooseBookPopup()">Edit</a></li>
+								<li><a href="#" onclick="openDeletePopup()">Delete</a></li>
 							</ul>
 						</div>
 					</div>
@@ -270,18 +254,25 @@ if (isset($_SESSION['error_message'])) {
 								<tbody>
 									<?php
 									// Query to select all books from the database
-									$stmt = $pdo->query("SELECT *, DATE_FORMAT(issueddate, '%Y-%m-%d') AS formatted_issueddate FROM tbl_bookinfo");
+									$stmt = $pdo->query("SELECT *, 
+											CASE 
+												WHEN isinuse = 1 THEN 'Borrowed' 
+												ELSE 'On Shelf' 
+											END AS book_status,
+											DATE_FORMAT(issueddate, '%Y-%m-%d') AS formatted_issueddate 
+										FROM tbl_bookinfo");
 									while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 										// Ensure output is sanitized
 										$bookId = htmlspecialchars($row['id']);
 										$bookName = htmlspecialchars($row['bookname']);
 										$author = htmlspecialchars($row['author']);
+										$bookStatus = htmlspecialchars($row['book_status']);
 										$issuedDate = htmlspecialchars($row['formatted_issueddate']);
 										
 										echo "<tr>
 												<td><a href='book{$bookId}.php'>{$bookName}</a></td>
 												<td>{$author}</td>
-												<td>on shelf</td>
+												<td>{$bookStatus}</td>
 												<td>{$bookId}</td>
 												<td>{$issuedDate}</td>
 											</tr>";
@@ -368,6 +359,117 @@ if (isset($_SESSION['error_message'])) {
 
 	<script src="booklist(Librarian).js"></script>
 	
+	<!-- Edit Book Modal -->
+	<div id="chooseBookPopup" class="modal">
+		<div class="modal-content">
+			<span class="close edit-close" onclick="closeChooseBookPopup()">&times;</span>
+			<h2>Choose a Book to Edit</h2>
+			<form id="chooseBookForm">
+				<label for="bookSelect">Select a Book:</label>
+				<select id="bookSelect" name="bookId">
+					<?php
+						// Fetch books from the database for the user to select
+						$stmt = $pdo->query("SELECT id, bookname FROM tbl_bookinfo");
+						while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+							$bookId = htmlspecialchars($row['id']);
+							$bookName = htmlspecialchars($row['bookname']);
+							echo "<option value='{$bookId}'>{$bookName}</option>";
+						}
+					?>
+				</select>
+				<button type="button" onclick="loadEditBookForm()" class="modal-submit-btn">Choose</button>
+			</form>
+		</div>
+	</div>
+
+	<!-- Edit Book Modal -->
+	<div id="editBookPopup" class="modal">
+		<div class="modal-content">
+			<span class="close edit-close" onclick="closeEditPopup()">&times;</span>
+			<h2>Edit Book</h2>
+			<form id="editBookForm" action="editbook.php" method="POST" enctype="multipart/form-data">
+				<input type="hidden" name="bookId" id="editBookId"> <!-- Hidden field for bookId -->
+
+				<!-- Image Preview Section -->
+				<label for="image">Book Image:</label>
+				<div class="image-preview-container">
+					<!-- Default image preview -->
+					<img id="uploadImagePreviewEdit" src="images/<?php echo htmlspecialchars($bookData['image'] ?? 'blankimg.png'); ?>" alt="Book Cover Preview" style="max-width: 100px;">
+					
+					<!-- Hidden file input -->
+					<input type="file" id="imageInputEdit" name="image" accept="image/*" style="display: none;">
+					
+					<!-- Button to trigger the file input click -->
+					<button type="button" id="uploadButtonEdit">Upload Image</button>
+				</div>
+
+				<label for="bookname">Book Name:</label>
+				<input type="text" name="bookname" id="editBookName" required>
+
+				<label for="author">Author:</label>
+				<input type="text" name="author" id="editAuthor" required>
+
+				<label for="bookNumber">Book Number:</label>
+				<input type="text" name="bookNumber" id="editBookNumber" required>
+
+				<label for="publishYear">Publish Year:</label>
+				<input type="text" name="publishYear" id="editPublishYear" required>
+
+				<label for="genre">Genre:</label>
+				<input type="text" name="genre" id="editGenre" required>
+
+				<label for="description">Description:</label>
+				<textarea name="description" id="editDescription" required></textarea>
+
+				<button type="submit" class="modal-submit-btn">Save Changes</button>
+			</form>
+		</div>
+	</div>
+
+
+	<!-- Delete Book Modal (Choose Book) -->
+	<div id="chooseDeleteBookPopup" class="modal">
+		<div class="modal-content">
+			<span class="close edit-close" onclick="closeChooseDeleteBookPopup()">&times;</span>
+			<h2>Choose a Book to Delete</h2>
+			<form id="chooseDeleteBookForm">
+				<label for="bookSelectToDelete">Select a Book:</label>
+				<select id="bookSelectToDelete" name="bookId">
+					<?php
+					// Fetch books from the database for the user to select
+					$stmt = $pdo->query("SELECT id, bookname FROM tbl_bookinfo");
+					while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+						$bookId = htmlspecialchars($row['id']);
+						$bookName = htmlspecialchars($row['bookname']);
+						echo "<option value='{$bookId}'>{$bookName}</option>";
+					}
+					?>
+				</select>
+				<button type="button" onclick="loadDeleteBookConfirmationForm()" class="modal-submit-btn">Choose</button>
+			</form>
+		</div>
+	</div>
+
+	<!-- Delete Confirmation Modal -->
+	<div id="deleteBookPopup" class="modal">
+		<div class="modal-content">
+			<span class="close" onclick="closeDeletePopup()">&times;</span>
+			<h2>Are you sure you want to delete this book?</h2>
+			<p id="deleteBookTitle"></p> <!-- Dynamically populated with book title -->
+			<form action="deletebook.php" method="POST" id="deleteBookForm">
+				<input type="hidden" name="bookId" id="deleteBookId">
+				<div class="button-container">
+					<button type="submit" class="modal-submit-btn">Yes, Delete</button>
+					<button type="button" class="modal-submit-btn" onclick="closeDeletePopup()">Cancel</button>
+				</div>
+			</form>
+		</div>
+	</div>
+
+
+	<script src="pop-up.js"></script>
+
+
 	<script>
 		// Modal Logic
 		document.addEventListener("DOMContentLoaded", () => {
@@ -418,53 +520,192 @@ if (isset($_SESSION['error_message'])) {
 	</script>
 
 	<script>
-		// Function to handle the search input event
-		function searchFunction() {
-			const searchTerm = document.getElementById("searchInput").value;
-			const searchResults = document.getElementById("searchResults");
-			
-			if (searchTerm.length > 0) {
-				fetchSearchResults(searchTerm);
-			} else {
-				// Clear results if search is empty
-				searchResults.innerHTML = '';
-				searchResults.style.display = 'none';
-			}
+		// Function to open Choose Book Popup
+		function openChooseBookPopup() {
+			document.getElementById('chooseBookPopup').style.display = 'block';
 		}
 
-		function fetchSearchResults(searchTerm) {
-			fetch('search.php?query=' + encodeURIComponent(searchTerm))
+		// Function to close Choose Book Popup
+		function closeChooseBookPopup() {
+			document.getElementById('chooseBookPopup').style.display = 'none';
+		}
+
+		// Function to load the Edit Book form with selected book details
+		function loadEditBookForm() {
+			var bookId = document.getElementById("bookSelect").value;
+			if (!bookId) {
+				alert("Please select a book to edit");
+				return;
+			}
+			
+			// Close the Choose Book modal
+			closeChooseBookPopup();
+
+			// Fetch and populate the Edit Book form
+			fetch(`getBookDetails.php?id=${bookId}`)
 				.then(response => response.json())
 				.then(data => {
-					const searchResults = document.getElementById("searchResults");
-					searchResults.innerHTML = ''; // Clear previous results
-
 					if (data.success) {
-						const ul = document.createElement('ul');
-						if (data.type === 'books') {
-							data.results.forEach(book => {
-								const li = document.createElement('li');
-								li.textContent = `${book.bookname} by ${book.author}`;
-								ul.appendChild(li);
-							});
-						} else if (data.type === 'users') {
-							data.results.forEach(user => {
-								const li = document.createElement('li');
-								li.textContent = `${user.username} (${user.email})`;
-								ul.appendChild(li);
-							});
-						}
-						searchResults.appendChild(ul);
-						searchResults.style.display = 'block'; // Show dropdown
+						// Populate the form with book details
+						document.getElementById('editBookId').value = data.data.id;
+						document.getElementById('editBookName').value = data.data.bookname;
+						document.getElementById('editAuthor').value = data.data.author;
+						document.getElementById('editBookNumber').value = data.data.bookNumber;
+						document.getElementById('editPublishYear').value = data.data.publishYear;
+						document.getElementById('editGenre').value = data.data.genre;
+						document.getElementById('editDescription').value = data.data.description;
+
+						// Open the Edit Book Modal
+						document.getElementById('editBookPopup').style.display = 'block';
 					} else {
-						searchResults.innerHTML = '<ul><li>No results found</li></ul>';
-						searchResults.style.display = 'block'; // Show dropdown
+						alert(data.message);
 					}
-				})
-				.catch(error => {
-					console.error('Error fetching search results:', error);
 				});
 		}
 	</script>
+
+	<script>
+    document.addEventListener("DOMContentLoaded", () => {
+		const uploadButtonEdit = document.getElementById("uploadButtonEdit");  // Upload button for Edit Book
+		const imageInputEdit = document.getElementById("imageInputEdit");  // Hidden file input for Edit Book
+		const uploadImagePreviewEdit = document.getElementById("uploadImagePreviewEdit");  // Image preview for Edit Book
+
+		// When the "Upload Image" button is clicked, trigger the file input click
+		uploadButtonEdit.addEventListener("click", () => {
+			imageInputEdit.click();  // Trigger the file input to open
+		});
+
+		// When a file is selected, update the image preview
+		imageInputEdit.addEventListener("change", () => {
+			const file = imageInputEdit.files[0];  // Get the selected file
+
+			if (file) {
+				const reader = new FileReader();  // Create a new FileReader instance
+
+				// When the file is loaded, update the preview
+				reader.onload = function (e) {
+					uploadImagePreviewEdit.src = e.target.result;  // Set the preview to the selected image
+				};
+
+				reader.readAsDataURL(file);  // Read the file as a data URL
+			}
+		});
+	});
+	</script>
+
+	<script>
+		// Modal close functionality
+		function closeEditPopup() {
+			document.getElementById('editBookPopup').style.display = 'none';
+		}
+
+		window.addEventListener('click', function (event) {
+			const modal = document.getElementById('editBookPopup');
+			// Close modal if clicking outside of modal content
+			if (event.target === modal) {
+				closeEditPopup();
+			}
+		});
+
+		document.addEventListener("DOMContentLoaded", () => {
+			const uploadButtonEdit = document.getElementById("uploadButtonEdit");  // Upload button for Edit Book
+			const imageInputEdit = document.getElementById("imageInputEdit");  // Hidden file input for Edit Book
+			const uploadImagePreviewEdit = document.getElementById("uploadImagePreviewEdit");  // Image preview for Edit Book
+
+			// When the "Upload Image" button is clicked, trigger the file input click
+			uploadButtonEdit.addEventListener("click", () => {
+				imageInputEdit.click();  // Trigger the file input to open
+			});
+
+			// When a file is selected, update the image preview
+			imageInputEdit.addEventListener("change", () => {
+				const file = imageInputEdit.files[0];  // Get the selected file
+
+				if (file) {
+					const reader = new FileReader();  // Create a new FileReader instance
+
+					// When the file is loaded, update the preview
+					reader.onload = function (e) {
+						uploadImagePreviewEdit.src = e.target.result;  // Set the preview to the selected image
+					};
+
+					reader.readAsDataURL(file);  // Read the file as a data URL
+				}
+			});
+		});
+	</script>
+
+	<script>
+		document.addEventListener("DOMContentLoaded", () => {
+			// Function to open the 'Choose Book to Delete' modal
+			window.openDeletePopup = function() {
+				document.getElementById("chooseDeleteBookPopup").style.display = "block";
+			};
+
+			// Function to close the 'Choose Book to Delete' modal
+			window.closeChooseDeleteBookPopup = function() {
+				document.getElementById("chooseDeleteBookPopup").style.display = "none";
+			};
+
+			// Function to load the delete confirmation form and show the confirmation modal
+			window.loadDeleteBookConfirmationForm = function() {
+				const bookSelectToDelete = document.getElementById("bookSelectToDelete");
+				const bookId = bookSelectToDelete.value;
+
+				if (!bookId) {
+					alert("Please select a book to delete.");
+					return;
+				}
+
+				// Show the delete confirmation modal and populate it with book details
+				document.getElementById("deleteBookId").value = bookId;
+				document.getElementById("deleteBookTitle").textContent = "Are you sure you want to delete this book?";
+
+				document.getElementById("deleteBookPopup").style.display = "block";
+			};
+
+			// Function to close the delete confirmation modal
+			window.closeDeletePopup = function() {
+				document.getElementById("deleteBookPopup").style.display = "none";
+			};
+
+			// Handle the form submission for book deletion
+			const deleteForm = document.getElementById("deleteBookForm");
+
+			if (deleteForm) {
+				deleteForm.addEventListener("submit", function (event) {
+					event.preventDefault(); // Prevent the form from submitting the normal way
+
+					// Grab the bookId from the form
+					const bookId = document.getElementById('deleteBookId').value;
+
+					// Perform the delete request using fetch
+					fetch('deletebook.php', {
+						method: 'POST',
+						body: new URLSearchParams({ 'bookId': bookId })  // Send bookId in the body
+					})
+					.then(response => response.json())
+					.then(data => {
+						// Handle response
+						if (data.success) {
+							alert(data.message); // Show success message
+							closeDeletePopup();  // Close the confirmation modal
+							// Optionally, refresh the page or update the UI to reflect the deletion
+							window.location.href = "Dashboard(Librarian).php";  // Redirect to the Dashboard
+						} else {
+							alert("Error: " + data.message);  // Show error message
+						}
+					})
+					.catch(error => {
+						console.error("Error:", error);
+						alert("There was an issue with the deletion process.");
+					});
+				});
+			}
+		});
+	</script>
+
+
+	<script src="search.js"></script>
 </body>
 </html>

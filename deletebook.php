@@ -64,8 +64,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Redirect to the Librarian Dashboard after successful deletion
         echo json_encode(["success" => true, "message" => "Book deleted successfully."]);
-        header("Location: Dashboard(Librarian).php"); // Redirect
-        exit();
     } else {
         echo json_encode(["success" => false, "message" => "Error deleting book: " . $deleteStmt->error]);
     }

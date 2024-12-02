@@ -540,6 +540,7 @@ main .data .content-data {
 	background: var(--light);
 	border-radius: 10px;
 	box-shadow: 4px 4px 16px rgba(0, 0, 0, .1);
+    color: black;
 }
 main .content-data .head {
 	display: flex;

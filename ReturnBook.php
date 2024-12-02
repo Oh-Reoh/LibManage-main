@@ -117,14 +117,7 @@ $conn->close();
                         <i class='bx bx-search icon' ></i>
                     </div>
                 </form>
-                <button class="add-book-btn">Add Book</button>
-                <a href="ReturnBook.php">
-				<button class="add-book-btn">Return a Book</button>
-			    </a>
-                <a href="#" class="nav-link">
-                    <i class='bx bxs-bell icon' ></i>
-                    <span class="badge">5</span>
-                </a>
+
 
                 <div class="profile">
                     <img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?ixid=MnwxMjA3fDB8MHxzZWFyY2h8NHx8cGVvcGxlfGVufDB8fDB8fA%3D%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60" alt="">
@@ -138,7 +131,7 @@ $conn->close();
 
             <main>
                 <div class="book-registration">
-                    <h2>Borrowing Book Transaction</h2>
+                    <h2>Return Book</h2>
                     <form action="ReturnBook.php" method="POST">
                         <label for="bookname">Book Name</label>
                         <select id="bookname" name="bookname" required onchange="fetchAuthor()">

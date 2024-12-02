@@ -21,6 +21,7 @@
     padding: 30px 20px;
     border-radius: 15px; /* Rounded corners */
     width: 50%; /* Wider modal for better spacing */
+
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3); /* Enhanced shadow */
     font-family: 'Poppins', sans-serif; /* Use modern font */
 }

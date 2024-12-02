@@ -1,4 +1,6 @@
 <?php
+// search.php
+
 // Database connection
 $host = 'localhost';
 $dbname = 'libmanagedb';
@@ -17,7 +19,7 @@ $response = ['success' => false, 'results' => [], 'type' => ''];
 // Search for books and users if query is provided
 if (!empty($query)) {
     // Search books
-    $booksStmt = $pdo->prepare("SELECT bookname, author FROM tbl_bookinfo WHERE bookname LIKE ? OR author LIKE ?");
+    $booksStmt = $pdo->prepare("SELECT id, bookname, author FROM tbl_bookinfo WHERE bookname LIKE ? OR author LIKE ?");
     $booksStmt->execute(["%$query%", "%$query%"]);
     $books = $booksStmt->fetchAll(PDO::FETCH_ASSOC);
 

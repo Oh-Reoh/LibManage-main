@@ -3,14 +3,14 @@ session_start();
 
 // Sample book details (These placeholders will be dynamically replaced during book creation)
 $book = [
-    'id' => '{{ID}}', // Ensure this is dynamically replaced
-    'title' => '{{NAME}}',
-    'author' => '{{AUTHOR}}',
-    'year' => '{{YEAR}}',
-    'genre' => '{{GENRES}}',
-    'number' => '{{BOOKNUMBER}}',
-    'image' => '{{IMAGE}}',
-    'description' => '{{DESCRIPTION}}',
+    'id' => '3', // Ensure this is dynamically replaced
+    'title' => 'Life of Pi',
+    'author' => 'Yann Martel',
+    'year' => '2001',
+    'genre' => 'novel, adventure',
+    'number' => '3',
+    'image' => 'life of pi.jpg',
+    'description' => 'Life of Pi is a Canadian philosophical novel by Yann Martel published in 2001. The protagonist is Piscine Molitor &quot;Pi&quot; Patel, an Indian boy from Pondicherry, India, who explores issues of spirituality and metaphysics from an early age.',
     'history' => 'No history available yet.',
     'rating' => '4.1',
     'stars' => '★★★★☆',

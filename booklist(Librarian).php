@@ -1,4 +1,14 @@
 <?php
+session_start();
+
+// Check if the user is logged in as a librarian
+if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'librarian') {
+    // Redirect to the reader's dashboard or login page if not a librarian
+    header("Location: Dashboard(Reader).php"); // Or replace with your login page
+    exit();
+}
+
+// Database connection
 $host = 'localhost';
 $dbname = 'libmanagedb';
 $username = 'root';
@@ -7,8 +17,13 @@ $password = '';
 $pdo = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
 $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-$stmt = $pdo->query("SELECT bookname, author, genre, 
-    DATE_FORMAT(issueddate, '%Y-%m-%d') AS issueddate, 
+// Fetch all books from tbl_bookinfo
+$stmt = $pdo->query("SELECT id, bookname, author, 
+    CASE 
+        WHEN isinuse = 1 THEN 'Borrowed' 
+        ELSE 'On Shelf' 
+    END AS book_status,
+    DATE_FORMAT(issueddate, '%Y-%m-%d') AS formatted_issueddate,
     publishYear, description
     FROM tbl_bookinfo");
 ?>
@@ -86,11 +101,6 @@ $stmt = $pdo->query("SELECT bookname, author, genre,
 			</form>
 
 
-			<a href="#" class="nav-link">
-				<i class='bx bxs-bell icon' ></i>
-				<span class="badge">5</span>
-			</a>
-
 			<div class="profile">
 				<img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?ixid=MnwxMjA3fDB8MHxzZWFyY2h8NHx8cGVvcGxlfGVufDB8fDB8fA%3D%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60" alt="">
 				<ul class="profile-link">
@@ -156,29 +166,26 @@ $stmt = $pdo->query("SELECT bookname, author, genre,
 			<!-- BOOKS DATA -->	
 			<div class="data">
 				<div class="container">
-					<div class="table-wrapper">
-						<div class="content-data">
+						<div class="table-wrapper">
 							<table>
 								<thead>
 									<tr>
 										<th>BOOK NAME</th>
 										<th>AUTHOR</th>
-										<th>GENRE</th>
-										<th>NUMBER OF COPIES</th>
-										<th>ISSUED DATE</th>
-										<th>DESCRIPTION</th>
+										<th>BOOK STATUS</th>
+										<th>ID</th>
+										<th>REGISTERED DATE</th>
 									</tr>
 								</thead>
 								<tbody>
 									<?php
 									while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 										echo "<tr>
-												<td>" . htmlspecialchars($row['bookname']) . "</td>
+												<td><a href='book" . $row['id'] . ".php'>" . htmlspecialchars($row['bookname']) . "</a></td>
 												<td>" . htmlspecialchars($row['author']) . "</td>
-												<td>" . htmlspecialchars($row['genre']) . "</td>
-												<td>" . htmlspecialchars($row['issueddate']) . "</td>
-												<td>" . htmlspecialchars($row['publishYear']) . "</td>
-												<td>" . htmlspecialchars($row['description']) . "</td>
+												<td>" . $row['book_status'] . "</td>
+												<td>" . $row['id'] . "</td>
+												<td>" . $row['formatted_issueddate'] . "</td>
 											</tr>";
 									}
 									?>
