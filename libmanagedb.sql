@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Dec 02, 2024 at 04:29 PM
+-- Generation Time: Dec 05, 2024 at 10:27 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -59,26 +59,52 @@ CREATE TABLE `tbl_bookinfo_logs` (
   `id` int(11) NOT NULL,
   `bookname` varchar(155) NOT NULL,
   `author` varchar(155) NOT NULL,
-  `issueddate` varchar(155) NOT NULL,
-  `returndate` varchar(155) NOT NULL,
-  `borrowedby` varchar(155) NOT NULL,
+  `issueddate` date DEFAULT NULL,
+  `returndate` date DEFAULT NULL,
+  `borrowedby` varchar(255) DEFAULT NULL,
   `returnedby` varchar(155) NOT NULL,
   `bookisinuse` int(155) NOT NULL,
   `requestby` varchar(155) NOT NULL,
-  `isrequest` int(155) NOT NULL
+  `isrequest` int(155) NOT NULL,
+  `islate` tinyint(1) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `tbl_bookinfo_logs`
 --
 
-INSERT INTO `tbl_bookinfo_logs` (`id`, `bookname`, `author`, `issueddate`, `returndate`, `borrowedby`, `returnedby`, `bookisinuse`, `requestby`, `isrequest`) VALUES
-(1, 'Murder on the Orient Express', 'Agatha Christie', '2024-11-28', '', 'Reader1', '', 1, 'Reader1', 1),
-(2, 'Murder on the Orient Express', 'Agatha Christie', '2024-11-28', '', 'Reader1', '', 1, 'Reader1', 1),
-(3, 'Murder on the Orient Express', 'Agatha Christie', '', '2024-11-28', 'Reader1', '', 0, 'Reader1', 0),
-(4, 'Murder on the Orient Express', 'Agatha Christie', '', '2024-11-28', 'Reader1', '', 0, 'Reader1', 0),
-(5, 'Murder on the Orient Express', 'Agatha Christie', '2024-11-28', '', 'ethan 1', '', 1, 'ethan 1', 1),
-(6, 'Murder on the Orient Express', 'Agatha Christie', '', '2024-11-28', 'ethan 1', '', 0, 'ethan 1', 0);
+INSERT INTO `tbl_bookinfo_logs` (`id`, `bookname`, `author`, `issueddate`, `returndate`, `borrowedby`, `returnedby`, `bookisinuse`, `requestby`, `isrequest`, `islate`) VALUES
+(1, 'Murder on the Orient Express', '', '0000-00-00', '0000-00-00', '', '', 0, '7', 3, 0);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `tbl_departments`
+--
+
+CREATE TABLE `tbl_departments` (
+  `id` int(11) NOT NULL,
+  `department_name` varchar(100) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `tbl_departments`
+--
+
+INSERT INTO `tbl_departments` (`id`, `department_name`) VALUES
+(1, 'BSPT'),
+(2, 'BSOT'),
+(3, 'BSES'),
+(4, 'BSCS'),
+(5, 'BSIT'),
+(6, 'BSEE'),
+(7, 'BSCpE'),
+(8, 'BSCE'),
+(9, 'BSME'),
+(10, 'BSIE'),
+(11, 'BEE'),
+(12, 'BSCHE'),
+(13, 'BSED');
 
 -- --------------------------------------------------------
 
@@ -156,13 +182,9 @@ CREATE TABLE `tbl_userinfo` (
 --
 
 INSERT INTO `tbl_userinfo` (`id`, `username`, `email`, `password`, `department`, `role`, `profile_picture`, `full_name`) VALUES
-(1, 'user1', 'user1@gmail.com', '$2y$10$4yuPGB6zyTss/OHSqsZ1OOqYYvsspMP1FsM.lKm4TGgNrqk2Fk3MO', 'IT', 'regular', 'images/default.jpg', ''),
-(2, 'jay', 'jay@gmail.com', '$2y$10$amtSxTfU/1B9/dLOKMdVt.nHSKBuT1eVr5SV.urRPYnztDyPir54a', 'Engineering', 'regular', 'images/default.jpg', ''),
-(3, 'John', 'John@gmail.com', '$2y$10$/D4b/kd.eXpE00IkZO/WJ.Jo7pERQwcMvT9wraQ/yIr3/lfjqsVTy', 'BSIT', 'regular', 'images/default.jpg', ''),
-(5, 'regular1', 'regular@gmail.com', '$2y$10$ShyuS9i3UPOByOnvuY8WB.fZAEWI1gq7ZdGp0lSy40f0UNjPED3tS', 'BSIT', 'regular', 'images/default.jpg', ''),
-(6, 'admin', 'admin@gmail.com', '$2y$10$WXZ9.7bFiULsRDd.ok2lluGcZ1lFM1azU6oMQg1D5/x/zskAQFTja', 'Admin', 'librarian', 'profilePictures/674d76b7c1488.jpg', 'John Admin'),
-(7, 'Reader1', 'Reader@gmail.com', '$2y$10$RN8shrsIXgSMYakwDMas7OuQdX0P2lVi/dPnGGWSUc4wbjFCZySNO', 'BSIT', 'regular', 'images/default.jpg', ''),
-(8, 'admin', 'admin@gmail.com', '$2y$10$rIUYE9Jm/he8C4Sn.AObr.44CC5jy.hgnp24YV4QfA6W3wjEtsPnq', 'Admin', 'regular', 'images/default.jpg', 'John Admin');
+(6, 'admin', 'admin@gmail.com', '$2y$10$2cNsXXKQnlMEvJX1BA39Cecb0.BazaGVyzNp6bM.meL4zxo.vLgI6', 'BSIT', 'librarian', 'profilePictures/674e5efbbc18d.jpg', 'John Admin1'),
+(7, 'TestReader1', 'Reader@gmail.com', '$2y$10$9yFZ6P/.sNEgUd8kv5J6M.3RIpO9NhfwoiilbwStyCUUZuXD/TipC', 'BSIT', 'regular', 'profilePictures/674ece751dcd8.png', 'John Readers'),
+(9, 'TestReader2', 'reader2@gmail.com', '$2y$10$fgTSYKn04tf5CWN5YhP6s.y8nGl3Ju3O8C0qj.1lFfaNI5DDqWCIu', 'BSCS', 'regular', 'images/default.jpg', 'Jane Doe');
 
 --
 -- Indexes for dumped tables
@@ -179,6 +201,12 @@ ALTER TABLE `tbl_bookinfo`
 -- Indexes for table `tbl_bookinfo_logs`
 --
 ALTER TABLE `tbl_bookinfo_logs`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `tbl_departments`
+--
+ALTER TABLE `tbl_departments`
   ADD PRIMARY KEY (`id`);
 
 --
@@ -202,13 +230,19 @@ ALTER TABLE `tbl_userinfo`
 -- AUTO_INCREMENT for table `tbl_bookinfo`
 --
 ALTER TABLE `tbl_bookinfo`
-  MODIFY `id` int(155) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` int(155) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `tbl_bookinfo_logs`
 --
 ALTER TABLE `tbl_bookinfo_logs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
+-- AUTO_INCREMENT for table `tbl_departments`
+--
+ALTER TABLE `tbl_departments`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
 -- AUTO_INCREMENT for table `tbl_genres`
@@ -220,7 +254,7 @@ ALTER TABLE `tbl_genres`
 -- AUTO_INCREMENT for table `tbl_userinfo`
 --
 ALTER TABLE `tbl_userinfo`
-  MODIFY `id` int(155) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id` int(155) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
