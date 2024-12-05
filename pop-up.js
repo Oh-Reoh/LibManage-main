@@ -8,6 +8,16 @@ document.addEventListener("DOMContentLoaded", () => {
     const editBookModal = document.getElementById("editBookPopup"); // Ensure this is the correct modal ID
     const editCloseBtn = document.querySelector(".edit-close");
     const editBookForm = document.getElementById("editBookForm");
+    
+    // Modal elements for Update Profile
+    const updateProfileModal = document.getElementById("updateProfileModal");
+    const openUpdateProfileModal = document.getElementById("openUpdateProfileModal");
+    const closeModalBtn = document.querySelector(".close-modal-btn");
+
+    // Image Preview for Edit Book Modal
+    const uploadButton = document.getElementById("uploadButton");
+    const imageInputEdit = document.getElementById("imageInputEdit");
+    const imagePreview = document.getElementById("imagePreview");
 
     // Check if the modal elements exist
     if (editBookModal && editCloseBtn && editBookForm) {
@@ -157,27 +167,27 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Image Preview for Edit Book Modal
-    const uploadButton = document.getElementById("uploadButton");
-    const imageInput = document.getElementById("editBookImage");
-    const imagePreview = document.getElementById("imagePreview");
-
     // Trigger file input click when upload button is clicked
     uploadButton.addEventListener("click", () => {
-        imageInput.click(); // Simulate click on file input
+        imageInputEdit.click(); // Simulate click on file input
     });
 
     // When the file is selected, update the image preview
-    imageInput.addEventListener("change", () => {
-        const file = imageInput.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = () => {
-                imagePreview.src = reader.result; // Update the preview with the selected image
-            };
-            reader.readAsDataURL(file);
-        }
-    });
+    if (imageInputEdit) {
+        imageInputEdit.addEventListener("change", () => {
+            const file = imageInputEdit.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    imagePreview.src = reader.result; // Update the preview with the selected image
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    } else {
+        console.error('Element with id "editBookImage" not found.');
+    }
+
 
     // Search Functionality: Handling Search Results
     document.getElementById("searchInput").addEventListener("input", searchFunction);
@@ -234,47 +244,99 @@ document.addEventListener("DOMContentLoaded", () => {
             });
     }
     
+    // Check if modal elements are found
+    if (updateProfileModal && openUpdateProfileModal && closeModalBtn) {
+        console.log("Modal elements are found."); // Debugging line to confirm modal elements are correctly selected.
 
-    // Handle Update Profile Form Submission
-    const updateProfileForm = document.querySelector("#updateProfileModal form");
-    if (updateProfileForm) {
-        updateProfileForm.addEventListener("submit", (event) => {
-            event.preventDefault(); // Prevent default form submission
+        // Open modal when the button is clicked
+        openUpdateProfileModal.addEventListener("click", function () {
+            console.log("Opening the modal...");
+            updateProfileModal.style.display = "block";
+        });
 
-            const formData = new FormData(updateProfileForm);
+        // Close modal when the close button is clicked
+        closeModalBtn.addEventListener("click", function () {
+            console.log("Closing the modal...");
+            updateProfileModal.style.display = "none";
+        });
 
-            fetch("update_profile.php", {
-                method: "POST",
-                body: formData,
-            })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error("Network response was not ok");
-                    }
-                    return response.text(); // Get the response as text
-                })
-                .then(text => {
-                    console.log("Response Text:", text);
-                    let data;
-                    try {
-                        data = JSON.parse(text);
-                    } catch (err) {
-                        console.error("Error parsing JSON:", err);
-                        alert("Failed to parse server response.");
-                        return;
-                    }
+        // Close modal if user clicks outside the modal
+        window.addEventListener("click", function (event) {
+            if (event.target === updateProfileModal) {
+                console.log("Clicked outside modal, closing...");
+                updateProfileModal.style.display = "none";
+            }
+        });
+    } else {
+        console.error("Modal elements not found! Check if the modal and buttons are correctly referenced.");
+    }
 
-                    if (data.success) {
-                        alert("Profile updated successfully.");
-                        location.reload(); // Refresh the page
-                    } else {
-                        alert("Error updating profile: " + data.message);
-                    }
-                })
-                .catch(error => {
-                    console.error("Error submitting update profile form:", error);
-                    alert("An error occurred while updating the profile.");
-                });
+    document.getElementById('updateForm').addEventListener('submit', function(event) {
+        let valid = true;
+        clearErrors(); // Clears previous error messages
+    
+        // Validate username (check if it exists already)
+        const username = document.getElementById('username').value;
+        if (username.length < 3) {
+            valid = false;
+            showError('usernameError', 'Username must be at least 3 characters long.');
+        }
+    
+        // Validate password (if it's not empty or matches criteria)
+        const password = document.getElementById('password').value;
+        if (password && password.length < 6) {
+            valid = false;
+            showError('passwordError', 'Password must be at least 6 characters long.');
+        }
+    
+        // Validate photo file type (JPG or PNG only)
+        const photo = document.getElementById('photo').files[0];
+        if (photo && !['image/jpeg', 'image/png'].includes(photo.type)) {
+            valid = false;
+            showError('photoError', 'Please upload a JPG or PNG image.');
+        }
+    
+        // If any validation fails, prevent form submission
+        if (!valid) {
+            event.preventDefault();
+            // Display a pop-up alert
+            showPopUp('There are errors in your form. Please correct them and try again.');
+        }
+    });
+    
+    function clearErrors() {
+        // Clear any existing error messages
+        document.querySelectorAll('.error-message').forEach(function(errorDiv) {
+            errorDiv.textContent = '';
         });
     }
+    
+    function showError(elementId, message) {
+        // Show an error message for a specific form field
+        document.getElementById(elementId).textContent = message;
+    }
+    
+    function showPopUp(message) {
+        // Create a pop-up div element
+        const popUp = document.createElement('div');
+        popUp.classList.add('pop-up');
+        popUp.innerHTML = `
+            <div class="pop-up-content">
+                <p>${message}</p>
+                <button class="close-pop-up">Close</button>
+            </div>
+        `;
+        document.body.appendChild(popUp);
+    
+        // Close pop-up on button click
+        document.querySelector('.close-pop-up').addEventListener('click', function() {
+            popUp.remove();
+        });
+    
+        // Optional: Auto close the pop-up after 5 seconds
+        setTimeout(function() {
+            popUp.remove();
+        }, 5000);
+    }
+    
 });

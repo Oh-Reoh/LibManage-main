@@ -9,37 +9,50 @@ if (isset($_POST['submit'])) {
     $cpass = isset($_POST['confirm_password']) ? $_POST['confirm_password'] : '';
     $department = isset($_POST['department']) ? mysqli_real_escape_string($conn, $_POST['department']) : '';
 
-    // Validate the input fields
-    if (empty($username) || empty($email) || empty($pass) || empty($cpass) || empty($department)) {
-        echo "<script>alert('Please fill in all required fields');</script>";
-    } elseif ($pass != $cpass) {
-        echo "<script>alert('Confirm password does not match!');</script>";
-    } else {
-        // Check if the email already exists in the database
-        $select = mysqli_query($conn, "SELECT * FROM `tbl_userinfo` WHERE email = '$email'") or die('Query failed: ' . mysqli_error($conn));
-
-        if (mysqli_num_rows($select) > 0) {
-            echo "<script>alert('Email already exists');</script>";
+    // Validate password length (at least 6 characters)
+    if (strlen($pass) < 6) {
+        echo "<script>alert('Invalid password, password must be at least 6 characters long');</script>";
+    }
+    // Validate the department
+    else {
+        $departmentCheck = mysqli_query($conn, "SELECT * FROM tbl_departments WHERE department_name = '$department'");
+        if (mysqli_num_rows($departmentCheck) == 0) {
+            echo "<script>alert('Invalid department. Please select a valid department.');</script>";
         } else {
-            // Hash the password using password_hash() for better security
-            $hashedPassword = password_hash($pass, PASSWORD_DEFAULT);
-
-            // Insert the new user into the database
-            $insert = mysqli_query($conn, "INSERT INTO `tbl_userinfo`(`username`, `email`, `password`, `department`) 
-                                           VALUES('$username','$email','$hashedPassword','$department')") or die('Query failed: ' . mysqli_error($conn));
-            
-            if ($insert) {
-                // Set a success message in session
-                $_SESSION['success_message'] = "Registered successfully! Please log in.";
-                header('Location: LoginPage.php'); // Redirect to login page
-                exit();
+            // Validate the input fields
+            if (empty($username) || empty($email) || empty($pass) || empty($cpass) || empty($department)) {
+                echo "<script>alert('Please fill in all required fields');</script>";
+            } elseif ($pass != $cpass) {
+                echo "<script>alert('Confirm password does not match!');</script>";
             } else {
-                echo "<script>alert('Registration failed! Please try again later.');</script>";
+                // Check if the email already exists in the database
+                $select = mysqli_query($conn, "SELECT * FROM `tbl_userinfo` WHERE email = '$email'") or die('Query failed: ' . mysqli_error($conn));
+
+                if (mysqli_num_rows($select) > 0) {
+                    echo "<script>alert('Email already exists');</script>";
+                } else {
+                    // Hash the password using password_hash() for better security
+                    $hashedPassword = password_hash($pass, PASSWORD_DEFAULT);
+
+                    // Insert the new user into the database
+                    $insert = mysqli_query($conn, "INSERT INTO `tbl_userinfo`(`username`, `email`, `password`, `department`) 
+                                                   VALUES('$username','$email','$hashedPassword','$department')") or die('Query failed: ' . mysqli_error($conn));
+                    
+                    if ($insert) {
+                        // Set a success message in session
+                        $_SESSION['success_message'] = "Registered successfully! Please log in.";
+                        header('Location: LoginPage.php'); // Redirect to login page
+                        exit();
+                    } else {
+                        echo "<script>alert('Registration failed! Please try again later.');</script>";
+                    }
+                }
             }
         }
     }
 }
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">

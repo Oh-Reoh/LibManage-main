@@ -103,11 +103,12 @@ li {
 }
 
 #sidebar .icon {
-    min-width: 60px;
+    min-width: 35px;
     display: flex;
     justify-content: center;
     align-items: center;
-    margin-right: 6px;
+    margin-right: 18px;
+    margin-left: 18px;
 }
 #sidebar .icon-right {
 	margin-left: auto;

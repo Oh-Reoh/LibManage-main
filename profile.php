@@ -1,6 +1,9 @@
 <?php
-// Include the necessary files
+// Start the session and regenerate the session ID
 session_start();
+session_regenerate_id(true);  // Ensure new session ID for security and isolation
+
+// Include the necessary files
 include('db_connect.php'); // Include database connection
 
 // Check if user is logged in and session is set
@@ -10,77 +13,69 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 // Assuming user ID is stored in session after login
-$userId = $_SESSION['user_id'];
+$userId = $_SESSION['user_id']; // This fetches the logged-in user's ID
 
-// Fetch user data from the database
+// Fetch user data from the database for the logged-in user
 $query = "SELECT * FROM tbl_userinfo WHERE id = :userId";
 $stmt = $pdo->prepare($query);
 $stmt->execute(['userId' => $userId]);
 $userData = $stmt->fetch(PDO::FETCH_ASSOC);
 
-// Default profile picture if not set
-$profilePic = $userData['profile_picture'] ? $userData['profile_picture'] : 'images/default.jpg';
+// If no profile picture exists, fallback to a default picture
+$profilePic = !empty($userData['profile_picture']) ? $userData['profile_picture'] : 'images/default.jpg';
 
-// Update profile logic
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update_profile'])) {
-    // Retrieve the form data
-    $username = $_POST['username'];
-    $full_name = $_POST['full_name'];
-    $email = $_POST['email'];
-    $department = $_POST['department'];
-    $role = $_POST['role']; // assuming the role can also be updated (if needed)
-    
-    // Handle file upload
-    if (!empty($_FILES['profile_picture']['name'])) {
-        // Get the file extension and make the file name unique
-        $fileExtension = pathinfo($_FILES['profile_picture']['name'], PATHINFO_EXTENSION);
-        $fileName = uniqid() . '.' . $fileExtension;  // Generate unique file name
-        $targetDirectory = "profilePictures/" . $fileName;  // Path where the file will be stored
-        
-        // Check if the profilePictures directory exists, create it if not
-        if (!is_dir('profilePictures')) {
-            mkdir('profilePictures', 0755, true);
+// Check if there's an error message in session
+$errorMessage = isset($_SESSION['error_message']) ? $_SESSION['error_message'] : '';
+unset($_SESSION['error_message']); // Clear error message after it is used
+
+// Handle form submission to update the profile
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
+    // Collect form data
+    $username = htmlspecialchars($_POST['username']);
+    $full_name = htmlspecialchars($_POST['full_name']);
+    $email = htmlspecialchars($_POST['email']);
+    $department = htmlspecialchars($_POST['department']);
+    $new_password = $_POST['new_password'];
+
+    // Call server.php for validation and error handling
+    include 'server.php';
+
+    // If validation succeeds, proceed with updating the profile
+    if (isset($_SESSION['success_message'])) {
+        // If the password is valid and department is valid, proceed with updating profile
+        if (empty($new_password)) {
+            // If no password provided, do not update password
+            $updateQuery = "UPDATE tbl_userinfo SET username = :username, full_name = :full_name, email = :email, department = :department WHERE id = :userId";
+            $stmt = $pdo->prepare($updateQuery);
+        } else {
+            // If new password provided, hash it and update
+            $hashedPassword = password_hash($new_password, PASSWORD_BCRYPT);
+            $updateQuery = "UPDATE tbl_userinfo SET username = :username, full_name = :full_name, email = :email, department = :department, password = :password WHERE id = :userId";
+            $stmt = $pdo->prepare($updateQuery);
+            $stmt->bindParam(':password', $hashedPassword);
         }
 
-        // Move the uploaded file to the target directory
-        if (move_uploaded_file($_FILES['profile_picture']['tmp_name'], $targetDirectory)) {
-            // File uploaded successfully
-            $profilePicture = $targetDirectory;
+        $stmt->bindParam(':username', $username);
+        $stmt->bindParam(':full_name', $full_name);
+        $stmt->bindParam(':email', $email);
+        $stmt->bindParam(':department', $department);
+        $stmt->bindParam(':userId', $userId);
+
+        if ($stmt->execute()) {
+            $_SESSION['success_message'] = 'Profile updated successfully!';
+            header('Location: profile.php');
+            exit();
         } else {
-            // Handle errors (file not uploaded)
-            $profilePicture = $userData['profile_picture']; // Keep old picture if upload fails
+            $_SESSION['error_message'] = 'Error updating profile. Please try again later.';
+            header('Location: profile.php'); // Redirect back to profile page on error
+            exit();
         }
     } else {
-        // No file uploaded, keep the old profile picture
-        $profilePicture = $userData['profile_picture'];
+        // If there were validation errors, redirect back to the profile page with error messages
+        header('Location: profile.php');
+        exit();
     }
-
-    // Update the user's profile in the database
-    $updateQuery = "UPDATE tbl_userinfo SET 
-                    username = :username,
-                    full_name = :full_name,
-                    email = :email,
-                    department = :department,
-                    profile_picture = :profile_picture
-                    WHERE id = :id";
-
-    $stmt = $pdo->prepare($updateQuery);
-    $stmt->execute([
-        'username' => $username,
-        'full_name' => $full_name,
-        'email' => $email,
-        'department' => $department,
-        'profile_picture' => $profilePicture,
-        'id' => $userId
-    ]);
-
-    // Redirect to the profile page to reflect changes
-    header("Location: profile.php");
-    exit();
 }
-
-include('getUserInfo.php');
-$profilePic = isset($userData['profile_picture']) && !empty($userData['profile_picture']) ? $userData['profile_picture'] : 'images/default.jpg';
 ?>
 
 
@@ -93,22 +88,31 @@ $profilePic = isset($userData['profile_picture']) && !empty($userData['profile_p
     <link href="https://fonts.googleapis.com/css2?family=Baloo+2&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="profile.css">
     <link rel="stylesheet" href="search.css">
-    <link rel="stylesheet" href="pop-up_add.css"> <!-- Modal Styles -->
+    <link rel="stylesheet" href="pop-up_add.css">
     <title>User Profile</title>
 </head>
 <body>
     <div class="dboard_content">
         <!-- SIDEBAR -->
         <section id="sidebar">
-            <a href="Dashboard(Librarian).php" class="brand">
+            <a href="<?php echo ($userData['role'] === 'librarian') ? 'Dashboard(Librarian).php' : 'Dashboard(Reader).php'; ?>" class="brand">
                 <img src="images/logo_ra.png" alt="Logo Icon" class="logo"> <p>Libmanage</p>
             </a>
             <ul class="side-menu">
-                <li><a href="Dashboard(Librarian).html" class="active"><img src="images/dashboard_icon.png" alt="Dashboard Icon" class="icon"> Dashboard</a></li>
-                <li><a href="booklist(Librarian).html" class="active"><img src="images/book_icon.png" alt="Dashboard Icon" class="icon-therest"> Books</a></li>
-                <li><a href="Reader'sRequest(Librarian).html" class="active"><img src="images/readers_request_icon.png" alt="Dashboard Icon" class="icon-therest"> Requests</a></li>
+                <!-- Dashboard Link -->
+                <li><a href="<?php echo ($userData['role'] === 'librarian') ? 'Dashboard(Librarian).php' : 'Dashboard(Reader).php'; ?>" class="active">
+                    <img src="images/dashboard_icon.png" alt="Dashboard Icon" class="icon"> Dashboard</a></li>
+
+                <!-- Books Link -->
+                <li><a href="<?php echo ($userData['role'] === 'librarian') ? 'booklist(Librarian).php' : 'booklist(Reader).php'; ?>" class="active">
+                    <img src="images/book_icon.png" alt="Dashboard Icon" class="icon-therest"> Books</a></li>
+
+                <!-- Requests Link -->
+                <li><a href="<?php echo ($userData['role'] === 'librarian') ? "Reader'sRequest(Librarian).php" : "Reader'sRequest(Reader).php"; ?>" class="active">
+                    <img src="images/readers_request_icon.png" alt="Dashboard Icon" class="icon-therest"> Requests</a></li>
             </ul>
         </section>
+
         <!-- SIDEBAR -->
 
         <!-- Main content -->
@@ -117,62 +121,45 @@ $profilePic = isset($userData['profile_picture']) && !empty($userData['profile_p
                 <i class='bx bx-menu toggle-sidebar'></i>
                 <form id="searchForm" action="#" method="GET">
                     <div class="form-group">
-                        <input type="text" id="searchInput" placeholder="Search books & members" oninput="searchFunction()">
+                        <input type="text" id="searchInput" placeholder="Search books" oninput="searchFunction()">
                         <i class="bx bx-search icon"></i>
                         <div id="searchResults" class="dropdown"></div>
                     </div>
                 </form>
 
                 <div class="profile">
-				<img src="<?php echo $profilePic; ?>" alt="Profile Picture" class="profile-img">
-					<ul class="profile-link">
-						<li><a href="profile.php"><i class='bx bxs-user-circle icon' ></i> Profile</a></li>
-						<li><a href="Mainpage.php"><i class='bx bxs-log-out-circle' ></i> Logout</a></li>
-					</ul>
-				</div>
+                    <img src="<?php echo $profilePic; ?>" alt="Profile Picture" class="profile-img">
+                    <ul class="profile-link">
+                        <li><a href="profile.php"><i class='bx bxs-user-circle icon'></i> Profile</a></li>
+                        <li><a href="Mainpage.php"><i class='bx bxs-log-out-circle'></i> Logout</a></li>
+                    </ul>
+                </div>
             </nav>
 
             <!-- PROFILE MAIN CONTENT -->
             <main>
-                <h1 class="title">Profile</h1>        
+                <h1 class="title">Profile</h1>
                 <div class="data">
                     <div class="profile-card">
                         <div class="profile-header">
+                            <!-- Display the user's profile picture -->
                             <img src="<?php echo $profilePic; ?>" alt="Profile Picture" class="profile-img">
                             <div class="user-info">
-                                <!-- Form for updating user information -->
-                                <form action="profile.php" method="POST" enctype="multipart/form-data">
-                                    <p><span class="label">Username:</span>
-                                        <input type="text" name="username" value="<?php echo htmlspecialchars($userData['username']); ?>" required>
-                                    </p>
-                                    <p><span class="label">Full Name:</span>
-                                        <input type="text" name="full_name" value="<?php echo htmlspecialchars($userData['full_name']); ?>" required>
-                                    </p>
-                                    <p><span class="label">Email:</span>
-                                        <input type="email" name="email" value="<?php echo htmlspecialchars($userData['email']); ?>" required>
-                                    </p>
-                                    <p><span class="label">Department:</span>
-                                        <input type="text" name="department" value="<?php echo htmlspecialchars($userData['department']); ?>" required>
-                                    </p>
-                                    <p><span class="label">Role:</span>
-                                        <input type="text" name="role" value="<?php echo htmlspecialchars($userData['role']); ?>" disabled>
-                                    </p>
-                                    <p><span class="label">Profile Picture:</span>
-                                        <input type="file" name="profile_picture">
-                                    </p>
-
-                                    <div class="profile-details">
-                                        <button type="submit" name="update_profile" class="customize-btn">Update Profile</button>
-                                    </div>
-                                </form>
+                                <p><span class="label">Username:</span> <?php echo htmlspecialchars($userData['username']); ?></p>
+                                <p><span class="label">Full Name:</span> <?php echo htmlspecialchars($userData['full_name']); ?></p>
+                                <p><span class="label">Email:</span> <?php echo htmlspecialchars($userData['email']); ?></p>
+                                <p><span class="label">Department:</span> <?php echo htmlspecialchars($userData['department']); ?></p>
+                                <p><span class="label">Role:</span> <?php echo htmlspecialchars($userData['role']); ?></p>
                             </div>
                         </div>
+                        <div class="profile-details">
+                            <button id="openUpdateProfileModal" name="update_profile" class="customize-btn">Update Profile</button>
+                        </div>
                     </div>
-					
                 </div>
             </main>
         </section>
-        
+
         <!-- FOOTER -->
         <footer>
             <div class="footer-container">
@@ -182,11 +169,11 @@ $profilePic = isset($userData['profile_picture']) && !empty($userData['profile_p
                         <p>Where Stories Live: <span class="second-line">Find And Borrow Your Next Great Read.</span></p>
                     </div>
                 </div>
-        
+
                 <div class="footer-center">
                     <p>&copy; 2024</p>
                 </div>
-        
+
                 <div class="footer-right">
                     <p>Follow Us</p>
                     <div class="footer-socials">
@@ -204,7 +191,75 @@ $profilePic = isset($userData['profile_picture']) && !empty($userData['profile_p
         </footer>
     </div>
 
-    <script src="Reader'sRequest(Librarian).js"></script>
+    <!-- Modal for updating profile information -->
+    <div id="updateProfileModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <span class="close-modal-btn">&times;</span>
+            <h2>Update Profile</h2>
+            <form action="server.php" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="action" value="update_profile">
+
+                <!-- Display any error messages if they exist -->
+                <?php if (isset($_SESSION['error_message'])): ?>
+                    <div class="error-message">
+                        <p><?php echo $_SESSION['error_message']; ?></p>
+                    </div>
+                    <?php unset($_SESSION['error_message']); ?>
+                <?php endif; ?>
+
+                <label for="username">Username:</label>
+                <input type="text" id="username" name="username" value="<?php echo isset($_SESSION['userData']['username']) ? htmlspecialchars($_SESSION['userData']['username']) : htmlspecialchars($userData['username']); ?>" required>
+
+                <label for="full_name">Full Name:</label>
+                <input type="text" id="full_name" name="full_name" value="<?php echo isset($_SESSION['userData']['full_name']) ? htmlspecialchars($_SESSION['userData']['full_name']) : htmlspecialchars($userData['full_name']); ?>" required>
+
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" value="<?php echo isset($_SESSION['userData']['email']) ? htmlspecialchars($_SESSION['userData']['email']) : htmlspecialchars($userData['email']); ?>" required>
+
+                <label for="department">Department:</label>
+                <input type="text" id="department" name="department" value="<?php echo isset($_SESSION['userData']['department']) ? htmlspecialchars($_SESSION['userData']['department']) : htmlspecialchars($userData['department']); ?>" required>
+
+                <label for="profile_picture">Profile Picture:</label>
+                <input type="file" id="profile_picture" name="profile_picture">
+
+                <label for="new_password">New Password (Optional):</label>
+                <input type="password" id="new_password" name="new_password" placeholder="Leave blank to keep current password">
+
+                <div class="profile-details">
+                    <button type="submit" name="update_profile" class="modal-submit-btn">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const updateProfileModal = document.getElementById("updateProfileModal");
+            const openUpdateProfileModal = document.getElementById("openUpdateProfileModal");
+            const closeModalBtn = document.querySelector(".close-modal-btn");
+
+            if (updateProfileModal && openUpdateProfileModal && closeModalBtn) {
+                openUpdateProfileModal.addEventListener("click", function () {
+                    updateProfileModal.style.display = "block";
+                });
+
+                closeModalBtn.addEventListener("click", function () {
+                    updateProfileModal.style.display = "none";
+                });
+
+                window.addEventListener("click", function (event) {
+                    if (event.target === updateProfileModal) {
+                        updateProfileModal.style.display = "none";
+                    }
+                });
+            } else {
+                console.error("Modal elements not found! Please check if the modal and buttons are correctly referenced.");
+            }
+        });
+    </script>
+
+    <script src="dashboard.js"></script>
     <script src="search.js"></script>
 </body>
 </html>

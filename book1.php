@@ -34,7 +34,10 @@ $booklistLink = $role === 'librarian' ? 'booklist(Librarian).php' : 'booklist(Re
     <link href="https://fonts.googleapis.com/css2?family=Baloo+2&display=swap" rel='stylesheet'>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel='stylesheet'>
     <link rel="stylesheet" href="book<?php echo htmlspecialchars($book['id']); ?>.css">
+    <link rel="stylesheet" href="profile.css">
+    <link rel="stylesheet" href="search.css">
     <link rel="stylesheet" href="pop-up_add.css">
+
     <title><?php echo htmlspecialchars($book['title']); ?></title>
 </head>
 <body>
@@ -105,12 +108,7 @@ $booklistLink = $role === 'librarian' ? 'booklist(Librarian).php' : 'booklist(Re
                                 </div>
                             </div>
                         </div>
-                        <div class="content-data book-history">
-                            <div class="head">
-                                <h3>Book History</h3>
-                            </div>
-                            <p><?php echo htmlspecialchars($book['history'] ?? 'No history available yet.'); ?></p>
-                        </div>
+
                     </div>
 
                     <div class="right-column">
@@ -157,5 +155,7 @@ $booklistLink = $role === 'librarian' ? 'booklist(Librarian).php' : 'booklist(Re
     </footer>
 
     <script src="pop-up.js"></script>
+    <script src="dashboard.js"></script>
+    <script src="search.js"></script>
 </body>
 </html>

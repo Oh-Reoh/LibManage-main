@@ -1,17 +1,29 @@
 <?php
 session_start();
+session_regenerate_id(true);  // Regenerate session ID for security and isolation
 
 // Force the user's role to 'librarian' when accessing the librarian's dashboard
-$_SESSION['role'] = 'librarian';
+$_SESSION['role'] = 'librarian';  // Explicitly set the role to 'librarian'
 
-// Redirect to the login page if the user is not logged in
+// Continue with your session check
 if (!isset($_SESSION['user_id'])) {
-    header('Location: LoginPage.php');
+    header("Location: LoginPage.php");
     exit();
 }
 
 $userId = $_SESSION['user_id']; // Get the logged-in user's ID
 
+// Include the database connection
+include('db_connect.php');
+
+// Fetch user data from the database for the logged-in user
+$query = "SELECT * FROM tbl_userinfo WHERE id = :userId";
+$stmt = $pdo->prepare($query);
+$stmt->execute(['userId' => $userId]);
+$userData = $stmt->fetch(PDO::FETCH_ASSOC);
+
+// If no profile picture exists, fallback to a default picture
+$profilePic = !empty($userData['profile_picture']) ? $userData['profile_picture'] : 'images/default.jpg';
 
 // Check if there is an error message to display
 if (isset($_SESSION['error_message'])) {
@@ -20,11 +32,13 @@ if (isset($_SESSION['error_message'])) {
     unset($_SESSION['error_message']);
 }
 
-include('getUserInfo.php');
-$profilePic = isset($userData['profile_picture']) && !empty($userData['profile_picture']) ? $userData['profile_picture'] : 'images/default.jpg';
-
-
+// Query to count the number of pending requests
+$stmt = $pdo->prepare("SELECT COUNT(*) FROM tbl_bookinfo_logs WHERE isrequest = 1");
+$stmt->execute();
+$pendingRequestsCount = $stmt->fetchColumn();
 ?>
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -82,7 +96,7 @@ $profilePic = isset($userData['profile_picture']) && !empty($userData['profile_p
 			<i class='bx bx-menu toggle-sidebar' ></i>
 			<form id="searchForm" action="#" method="GET">
 				<div class="form-group">
-					<input type="text" id="searchInput" placeholder="Search books & members" oninput="searchFunction()">
+					<input type="text" id="searchInput" placeholder="Search books" oninput="searchFunction()">
 					<i class="bx bx-search icon"></i>
 					<div id="searchResults" class="dropdown"></div> <!-- Dropdown for results -->
 				</div>
@@ -93,10 +107,10 @@ $profilePic = isset($userData['profile_picture']) && !empty($userData['profile_p
 
 
 			<div class="profile">
-			<img src="<?php echo $profilePic; ?>" alt="Profile Picture" class="profile-img">
+				<img src="<?php echo $profilePic; ?>" alt="Profile Picture" class="profile-img">
 				<ul class="profile-link">
 					<li><a href="profile.php"><i class='bx bxs-user-circle icon' ></i> Profile</a></li>
-					<li><a href="Mainpage.php"><i class='bx bxs-log-out-circle' ></i> Logout</a></li>
+					<li><a href="logout.php"><i class='bx bxs-log-out-circle'></i> Logout</a></li>
 				</ul>
 			</div>
 		</nav>
@@ -137,7 +151,7 @@ $profilePic = isset($userData['profile_picture']) && !empty($userData['profile_p
 				<div class="card">
 					<div class="head">
 						<div>
-							<h2>1</h2>
+							<h2><?php echo $pendingRequestsCount; ?></h2> <!-- Display the dynamic count here -->
 							<p>Pending Requests</p>
 						</div>
 						<img src="images/pending-icon.png" alt="Pending Readers Icon" class="icon pending-icon">
@@ -175,25 +189,37 @@ $profilePic = isset($userData['profile_picture']) && !empty($userData['profile_p
 									$pdo = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
 									$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-									// Query to fetch readers' information, department, and books borrowed
+									// Query to fetch all regular users and their currently borrowed books
 									$stmt = $pdo->query("
-										SELECT u.username, u.email, u.department, GROUP_CONCAT(b.bookname SEPARATOR ', ') AS books_borrowed
-										FROM tbl_userinfo u
-										LEFT JOIN tbl_bookinfo_logs l ON u.username = l.borrowedby
-										LEFT JOIN tbl_bookinfo b ON l.bookname = b.bookname
-										WHERE u.role = 'regular'
-										GROUP BY u.id
+										SELECT 
+											u.username, 
+											u.email, 
+											u.department, 
+											IFNULL(GROUP_CONCAT(b.bookname SEPARATOR ', '), 'None') AS books_borrowed
+										FROM 
+											tbl_userinfo u
+										LEFT JOIN 
+											tbl_bookinfo_logs l ON u.username = l.borrowedby AND l.bookisinuse = 1
+										LEFT JOIN 
+											tbl_bookinfo b ON l.bookname = b.bookname
+										WHERE 
+											u.role = 'regular'
+										GROUP BY 
+											u.id
 									");
 
 									while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-										// Check if the email exceeds 10 characters and truncate with '...'
+										// Truncate all fields to 10 characters and add '...' if necessary
+										$username = strlen($row['username']) > 10 ? substr($row['username'], 0, 10) . '...' : $row['username'];
 										$email = strlen($row['email']) > 10 ? substr($row['email'], 0, 10) . '...' : $row['email'];
+										$department = strlen($row['department']) > 10 ? substr($row['department'], 0, 10) . '...' : $row['department'];
+										$booksBorrowed = strlen($row['books_borrowed']) > 10 ? substr($row['books_borrowed'], 0, 10) . '...' : $row['books_borrowed'];
 
 										echo "<tr>
-												<td>{$row['username']}</td>
+												<td>{$username}</td>
 												<td>{$email}</td>
-												<td>{$row['department']}</td>
-												<td>{$row['books_borrowed']}</td>
+												<td>{$department}</td>
+												<td>{$booksBorrowed}</td>
 											</tr>";
 									}
 									?>
@@ -201,6 +227,8 @@ $profilePic = isset($userData['profile_picture']) && !empty($userData['profile_p
 							</table>
 						</div>
 					</div>
+
+					
 				</div>
 
 
@@ -282,7 +310,7 @@ $profilePic = isset($userData['profile_picture']) && !empty($userData['profile_p
             </div>
     
             <div class="footer-center">
-                <p>&copy; 2024</p>
+                <p>&copy; ALPHA ONE 2024</p>
             </div>
     
             <div class="footer-right">
@@ -447,10 +475,7 @@ $profilePic = isset($userData['profile_picture']) && !empty($userData['profile_p
 		</div>
 	</div>
 
-
 	<script src="pop-up.js"></script>
-
-
 	<script>
 		// Modal Logic
 		document.addEventListener("DOMContentLoaded", () => {

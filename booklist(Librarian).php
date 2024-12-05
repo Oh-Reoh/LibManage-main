@@ -17,6 +17,16 @@ $password = '';
 $pdo = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
 $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
+// Fetch user data for the logged-in librarian (including profile picture)
+$userId = $_SESSION['user_id']; // Get the logged-in user's ID
+$query = "SELECT * FROM tbl_userinfo WHERE id = :userId";
+$stmt = $pdo->prepare($query);
+$stmt->execute(['userId' => $userId]);
+$userData = $stmt->fetch(PDO::FETCH_ASSOC);
+
+// If no profile picture exists, fallback to a default picture
+$profilePic = !empty($userData['profile_picture']) ? $userData['profile_picture'] : 'images/default.jpg';
+
 // Fetch all books from tbl_bookinfo
 $stmt = $pdo->query("SELECT id, bookname, author, 
     CASE 
@@ -42,7 +52,8 @@ $stmt = $pdo->query("SELECT id, bookname, author,
     <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
 
 	<link rel="stylesheet" href="booklist(Librarian).css">
-
+	<link rel="stylesheet" href="pop-up_add.css">
+	<link rel="stylesheet" href="search.css">
 	<title>Books</title>
 </head>
 <body>
@@ -72,12 +83,6 @@ $stmt = $pdo->query("SELECT id, bookname, author,
 				</a>
 			</li>
 
-			<li>
-				<a href="#" class="active">
-					<img src="images/settings_icon.png" alt="Dashboard Icon" class="icon-therest"> Settings
-				</a>
-			</li>
-
 		</ul>
 		
 	</section>
@@ -88,27 +93,23 @@ $stmt = $pdo->query("SELECT id, bookname, author,
 		<!-- NAVBAR -->
 		<nav>
 			<i class='bx bx-menu toggle-sidebar' ></i>
-			<form action="#">
+			<form id="searchForm" action="#" method="GET">
 				<div class="form-group">
-					<input type="text" placeholder="Search books & members">
-					<style>
-						input[type="text"]::placeholder {
-						    color: #6F58DA;
-						}
-					</style>
-					<i class='bx bx-search icon' ></i>
+					<input type="text" id="searchInput" placeholder="Search books" oninput="searchFunction()">
+					<i class="bx bx-search icon"></i>
+					<div id="searchResults" class="dropdown"></div> <!-- Dropdown for results -->
 				</div>
 			</form>
 
 
+			<!-- Profile Section -->
 			<div class="profile">
-				<img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?ixid=MnwxMjA3fDB8MHxzZWFyY2h8NHx8cGVvcGxlfGVufDB8fDB8fA%3D%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60" alt="">
-				<ul class="profile-link">
-					<li><a href="profile.php"><i class='bx bxs-user-circle icon' ></i> Profile</a></li>
-					<li><a href="#"><i class='bx bxs-cog' ></i> Settings</a></li>
-					<li><a href="Mainpage.php"><i class='bx bxs-log-out-circle' ></i> Logout</a></li>
-				</ul>
-			</div>
+                    <img src="<?php echo $profilePic; ?>" alt="Profile Picture" class="profile-img">
+                    <ul class="profile-link">
+                        <li><a href="profile.php"><i class='bx bxs-user-circle icon'></i> Profile</a></li>
+                        <li><a href="logout.php"><i class='bx bxs-log-out-circle'></i> Logout</a></li>
+                    </ul>
+            </div>
 		</nav>
 		<!-- NAVBAR -->
 
@@ -116,50 +117,7 @@ $stmt = $pdo->query("SELECT id, bookname, author,
 		<main>
 			<h1 class="title">Books</h1>
 			
-			<!-- INFO DATA -->
-			<div class="info-data">
-				<div class="card">
-					<div class="head">
-						<div>
-
-							<p>All Books</p>
-						</div>
-
-					</div>
-				</div>
 			
-				<div class="card">
-					<div class="head">
-						<div>
-
-							<p>Borrowed Books</p>
-						</div>
-
-					</div>
-				</div>
-			
-				<div class="card">
-					<div class="head">
-						<div >
-
-							<p>Overdue Books</p>
-						</div>
-
-					</div>
-				</div>
-			
-				<div class="card-search">
-					<div class="head">
-						<div class="search-books">
-
-							<input type="text" placeholder="Search books">
-
-                            <i class='bx bx-search icon' ></i>
-						</div>
-
-					</div>
-				</div>
-			</div>
 					
 						
 
@@ -193,7 +151,9 @@ $stmt = $pdo->query("SELECT id, bookname, author,
 							</table>
 						</div>
 					</div>
+					
 				</div>
+
 			</div>
 
 		</main>
@@ -232,5 +192,6 @@ $stmt = $pdo->query("SELECT id, bookname, author,
         </div>
     </footer>
 	<script src="booklist(Librarian).js"></script>
+	<script src="search.js"></script>
 </body>
 </html>

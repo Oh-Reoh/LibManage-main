@@ -532,6 +532,8 @@ main .data {
 	grid-gap: 20px;
 	margin-top: 20px;
 	flex-wrap: wrap;
+    align-content: center;
+    justify-content: center;
 }
 main .data .content-data {
 	flex-grow: 1;
@@ -541,6 +543,8 @@ main .data .content-data {
 	border-radius: 10px;
 	box-shadow: 4px 4px 16px rgba(0, 0, 0, .1);
     color: black;
+    width: 1020px;
+    display: grid;
 }
 main .content-data .head {
 	display: flex;

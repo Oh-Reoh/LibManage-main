@@ -2,7 +2,7 @@
 session_start();
 include('db_connect.php');
 
-// Check if the user is logged in and is a reader
+// Check if the user is logged in and has the correct role
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'regular') {
     header("Location: LoginPage.php");
     exit();
@@ -37,9 +37,9 @@ try {
 
         // Insert request into tbl_bookinfo_logs
         $insertQuery = "INSERT INTO tbl_bookinfo_logs 
-                        (bookname, author, issueddate, returndate, borrowedby, returnedby, bookisinuse, requestby, isrequest, islate) 
-                        VALUES 
-                        (:bookname, :author, NULL, NULL, NULL, NULL, 0, :requestby, 1, 0)";
+                (bookname, author, issueddate, returndate, borrowedby, returnedby, bookisinuse, requestby, isrequest, islate) 
+                VALUES 
+                (:bookname, :author, NULL, NULL, NULL, NULL, 0, :requestby, 1, 0)";
         $stmtInsert = $pdo->prepare($insertQuery);
         $stmtInsert->execute([
             'bookname' => $bookName,

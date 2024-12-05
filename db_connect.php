@@ -5,6 +5,7 @@ try {
     $dbname = 'libmanagedb';    // Database name
     $username = 'root';         // Database username
     $password = '';             // Database password (leave empty for XAMPP default)
+    $pdo = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
 
     // Establishing the PDO connection
     $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
