@@ -2,60 +2,76 @@
 session_start();
 include('db_connect.php');
 
-// Check if the user is logged in and has the correct role
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'regular') {
-    header("Location: LoginPage.php");
+// Ensure only librarians can process requests
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'librarian') {
+    header("Location: Dashboard(Reader).php");
     exit();
 }
 
-// Get user details
-$userId = $_SESSION['user_id'];
-$bookName = $_POST['bookname'];
+// Handle Accept Request
+if (isset($_POST['accept'])) {
+    $requestId = $_POST['accept'];
 
-try {
-    // Fetch user information (username)
-    $userQuery = "SELECT username FROM tbl_userinfo WHERE id = :userId";
-    $stmtUser = $pdo->prepare($userQuery);
-    $stmtUser->execute(['userId' => $userId]);
-    $userData = $stmtUser->fetch(PDO::FETCH_ASSOC);
+    try {
+        $query = "SELECT bookname, requestby FROM tbl_bookinfo_logs WHERE id = :requestId";
+        $stmt = $pdo->prepare($query);
+        $stmt->execute(['requestId' => $requestId]);
+        $requestData = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    if (!$userData) {
-        header("Location: Dashboard(Reader).php?error=user_not_found");
+        if ($requestData) {
+            $bookName = $requestData['bookname'];
+            $borrowedBy = $requestData['requestby'];
+            $issuedDate = date('Y-m-d');
+
+            // Update the log as accepted
+            $updateLogQuery = "UPDATE tbl_bookinfo_logs 
+                               SET isrequest = 0, bookisinuse = 1, issueddate = :issuedDate, borrowedby = :borrowedBy 
+                               WHERE id = :requestId";
+            $stmtUpdateLog = $pdo->prepare($updateLogQuery);
+            $stmtUpdateLog->execute([
+                'issuedDate' => $issuedDate,
+                'borrowedBy' => $borrowedBy,
+                'requestId' => $requestId
+            ]);
+
+            // Update the book status
+            $updateBookQuery = "UPDATE tbl_bookinfo 
+                                SET isinuse = 1 
+                                WHERE bookname = :bookName";
+            $stmtUpdateBook = $pdo->prepare($updateBookQuery);
+            $stmtUpdateBook->execute(['bookName' => $bookName]);
+
+            header("Location: Reader'sRequest(Librarian).php?success=accepted");
+            exit();
+        }
+    } catch (PDOException $e) {
+        error_log($e->getMessage());
+        header("Location: Reader'sRequest(Librarian).php?error=accept_failed");
         exit();
     }
-
-    $username = $userData['username'];
-
-    // Fetch book details from tbl_bookinfo
-    $bookQuery = "SELECT bookname, author FROM tbl_bookinfo WHERE bookname = :bookName AND isinuse = 0";
-    $stmtBook = $pdo->prepare($bookQuery);
-    $stmtBook->execute(['bookName' => $bookName]);
-    $bookData = $stmtBook->fetch(PDO::FETCH_ASSOC);
-
-    if ($bookData) {
-        $author = $bookData['author'];
-
-        // Insert request into tbl_bookinfo_logs
-        $insertQuery = "INSERT INTO tbl_bookinfo_logs 
-                (bookname, author, issueddate, returndate, borrowedby, returnedby, bookisinuse, requestby, isrequest, islate) 
-                VALUES 
-                (:bookname, :author, NULL, NULL, NULL, NULL, 0, :requestby, 1, 0)";
-        $stmtInsert = $pdo->prepare($insertQuery);
-        $stmtInsert->execute([
-            'bookname' => $bookName,
-            'author' => $author,
-            'requestby' => $username
-        ]);
-
-        header("Location: Dashboard(Reader).php?success=requested");
-        exit();
-    } else {
-        header("Location: Dashboard(Reader).php?error=book_unavailable");
-        exit();
-    }
-} catch (PDOException $e) {
-    error_log("Database Error: " . $e->getMessage());
-    header("Location: Dashboard(Reader).php?error=request_failed");
-    exit();
 }
+
+if (isset($_POST['deny'])) {
+    $requestId = $_POST['deny'];
+
+    try {
+        // Mark the request as denied
+        $updateLogQuery = "UPDATE tbl_bookinfo_logs 
+                           SET isrequest = 3 
+                           WHERE id = :requestId";
+        $stmtUpdateLog = $pdo->prepare($updateLogQuery);
+        $stmtUpdateLog->execute(['requestId' => $requestId]);
+
+        header("Location: Reader'sRequest(Librarian).php?success=denied");
+        exit();
+    } catch (PDOException $e) {
+        error_log($e->getMessage());
+        header("Location: Reader'sRequest(Librarian).php?error=deny_failed");
+        exit();
+    }
+}
+
+// Redirect if no action is performed
+header("Location: Reader'sRequest(Librarian).php");
+exit();
 ?>
