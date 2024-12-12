@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Dec 05, 2024 at 10:27 AM
+-- Generation Time: Dec 12, 2024 at 05:01 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -62,19 +62,31 @@ CREATE TABLE `tbl_bookinfo_logs` (
   `issueddate` date DEFAULT NULL,
   `returndate` date DEFAULT NULL,
   `borrowedby` varchar(255) DEFAULT NULL,
-  `returnedby` varchar(155) NOT NULL,
+  `returnedby` varchar(255) DEFAULT NULL,
   `bookisinuse` int(155) NOT NULL,
   `requestby` varchar(155) NOT NULL,
   `isrequest` int(155) NOT NULL,
-  `islate` tinyint(1) DEFAULT 0
+  `islate` tinyint(1) DEFAULT 0,
+  `requestdate` date DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `tbl_bookinfo_logs`
 --
 
-INSERT INTO `tbl_bookinfo_logs` (`id`, `bookname`, `author`, `issueddate`, `returndate`, `borrowedby`, `returnedby`, `bookisinuse`, `requestby`, `isrequest`, `islate`) VALUES
-(1, 'Murder on the Orient Express', '', '0000-00-00', '0000-00-00', '', '', 0, '7', 3, 0);
+INSERT INTO `tbl_bookinfo_logs` (`id`, `bookname`, `author`, `issueddate`, `returndate`, `borrowedby`, `returnedby`, `bookisinuse`, `requestby`, `isrequest`, `islate`, `requestdate`) VALUES
+(1, 'Murder on the Orient Express', 'Agatha Christie', NULL, NULL, NULL, NULL, 0, 'TestReader1', 3, 0, '2024-12-10'),
+(2, 'Murder on the Orient Express', 'Agatha Christie', NULL, NULL, NULL, NULL, 0, 'TestReader1', 3, 0, '2024-12-10'),
+(3, 'Murder on the Orient Express', 'Agatha Christie', NULL, NULL, NULL, NULL, 0, 'TestReader1', 3, 0, '2024-12-10'),
+(4, 'Murder on the Orient Express', 'Agatha Christie', '2024-12-10', '2024-12-10', 'TestReader1', 'TestReader1', 0, 'TestReader1', 0, 0, '2024-12-10'),
+(5, 'Murder on the Orient Express', 'Agatha Christie', '2024-12-10', '2024-12-11', 'TestReader1', 'TestReader1', 0, 'TestReader1', 0, 0, '2024-12-10'),
+(6, 'Murder on the Orient Express', 'Agatha Christie', NULL, NULL, NULL, NULL, 0, 'TestReader3', 3, 0, '2024-12-10'),
+(7, 'Murder on the Orient Express', 'Agatha Christie', '2024-12-11', '2024-12-11', 'TestReader1', 'TestReader1', 0, 'TestReader1', 0, 0, '2024-12-11'),
+(8, 'Murder on the Orient Express', 'Agatha Christie', '2024-12-11', '2024-12-11', 'TestReader1', 'TestReader1', 0, 'TestReader1', 0, 0, '2024-12-11'),
+(9, 'Murder on the Orient Express', 'Agatha Christie', '2024-12-11', '2024-12-11', 'TestReader1', 'TestReader1', 0, 'TestReader1', 0, 0, '2024-12-11'),
+(10, 'Murder on the Orient Express', 'Agatha Christie', '2024-12-11', '2024-12-11', 'TestReader1', 'TestReader1', 0, 'TestReader1', 0, 0, '2024-12-12'),
+(11, 'Harry Potter and the Goblet of Fire', 'J.K Rowling', '2024-12-11', '2024-12-11', 'TestReader2', 'TestReader2', 0, 'TestReader2', 0, 0, '2024-12-12'),
+(12, 'Life of Pi', 'Yann Martel', NULL, NULL, NULL, NULL, 0, 'TestReader2', 1, 0, '2024-12-12');
 
 -- --------------------------------------------------------
 
@@ -182,9 +194,10 @@ CREATE TABLE `tbl_userinfo` (
 --
 
 INSERT INTO `tbl_userinfo` (`id`, `username`, `email`, `password`, `department`, `role`, `profile_picture`, `full_name`) VALUES
-(6, 'admin', 'admin@gmail.com', '$2y$10$2cNsXXKQnlMEvJX1BA39Cecb0.BazaGVyzNp6bM.meL4zxo.vLgI6', 'BSIT', 'librarian', 'profilePictures/674e5efbbc18d.jpg', 'John Admin1'),
-(7, 'TestReader1', 'Reader@gmail.com', '$2y$10$9yFZ6P/.sNEgUd8kv5J6M.3RIpO9NhfwoiilbwStyCUUZuXD/TipC', 'BSIT', 'regular', 'profilePictures/674ece751dcd8.png', 'John Readers'),
-(9, 'TestReader2', 'reader2@gmail.com', '$2y$10$fgTSYKn04tf5CWN5YhP6s.y8nGl3Ju3O8C0qj.1lFfaNI5DDqWCIu', 'BSCS', 'regular', 'images/default.jpg', 'Jane Doe');
+(6, 'admin', 'admin@gmail.com', '$2y$10$AhC2k6no3Mh7EL6tS7nN2uBRlGBJwPCqgCnfWtPfLCR/37x12S9Ge', 'BSIT', 'librarian', 'profilePictures/6757e93e558fd_bear.jpg', 'John Admin'),
+(7, 'TestReader1', 'Reader@gmail.com', '$2y$10$Y.f19VoX5NZpJszRZbP0a.MskrcZhdca63ZyiCT/MWkNAXeS6uM42', 'BSIT', 'regular', 'profilePictures/6757de462e0f0_profile1.png', 'John Reader'),
+(9, 'TestReader2', 'reader2@gmail.com', '$2y$10$/N5XT81K8YlXaxHo4KNDte8JdPORp.t5s8D.Nx9ns4rxrN3Q957hC', 'BSCS', 'regular', 'profilePictures/675a5e1bc667e_profile5.png', 'Jane Doe'),
+(13, 'TestReader3', 'reader3@gmail.com', '$2y$10$3DgIKXpTw7BNUGpcY1EiSexmPcgqNUbE2K1gvCw/y9N3jj5AEUaYW', 'BSIT', 'regular', 'images/default.jpg', '');
 
 --
 -- Indexes for dumped tables
@@ -230,13 +243,13 @@ ALTER TABLE `tbl_userinfo`
 -- AUTO_INCREMENT for table `tbl_bookinfo`
 --
 ALTER TABLE `tbl_bookinfo`
-  MODIFY `id` int(155) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` int(155) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT for table `tbl_bookinfo_logs`
 --
 ALTER TABLE `tbl_bookinfo_logs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- AUTO_INCREMENT for table `tbl_departments`
@@ -254,7 +267,7 @@ ALTER TABLE `tbl_genres`
 -- AUTO_INCREMENT for table `tbl_userinfo`
 --
 ALTER TABLE `tbl_userinfo`
-  MODIFY `id` int(155) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
+  MODIFY `id` int(155) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
