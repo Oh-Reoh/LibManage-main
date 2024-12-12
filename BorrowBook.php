@@ -39,7 +39,7 @@ try {
         $insertQuery = "INSERT INTO tbl_bookinfo_logs 
                         (bookname, author, issueddate, returndate, borrowedby, returnedby, bookisinuse, requestby, isrequest, islate) 
                         VALUES 
-                        (:bookname, :author, NULL, NULL, NULL, NULL, 0, :requestby, 1, 0)";
+                        (:bookname, :author, NULL, NULL, NULL, '', 0, :requestby, 1, 0)";
         $stmtInsert = $pdo->prepare($insertQuery);
         $stmtInsert->execute([
             'bookname' => $bookName,

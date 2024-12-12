@@ -32,16 +32,19 @@ $userName = !empty($userData['full_name']) ? $userData['full_name'] : $userData[
 // If no profile picture exists, fallback to a default picture
 $profilePic = !empty($userData['profile_picture']) ? $userData['profile_picture'] : 'images/default.jpg';
 
-// Query to get the count of books currently borrowed by the logged-in user
+// Assuming $username is available from the session
+$username = $_SESSION['username'];
+
+// Fetch the count of books currently borrowed by the user
 $query = "SELECT COUNT(*) as borrowed_books 
           FROM tbl_bookinfo_logs 
-          WHERE borrowedby = :userId AND bookisinuse = 1";
+          WHERE borrowedby = :username AND bookisinuse = 1";
 $stmt = $pdo->prepare($query);
-$stmt->execute(['userId' => $userId]);
-
-// Fetch the result
+$stmt->execute(['username' => $username]);
 $result = $stmt->fetch(PDO::FETCH_ASSOC);
-$borrowedBooksCount = $result['borrowed_books'];
+
+// Check if a valid result is returned
+$borrowedBooksCount = $result ? $result['borrowed_books'] : 0; // Default to 0 if no result
 ?>
 
 <!DOCTYPE html>
@@ -60,6 +63,17 @@ $borrowedBooksCount = $result['borrowed_books'];
 	<link rel="stylesheet" href="pop-up_add.css">
 	<link rel="stylesheet" href="search.css">
 	<title>Dashboard</title>
+
+	<style>
+		.disabled-book {
+			color: gray;
+			text-decoration: none;
+			cursor: not-allowed;
+		}
+		.disabled-book:hover {
+			text-decoration: underline;
+		}
+	</style>
 </head>
 <body>
 	
@@ -135,8 +149,6 @@ $borrowedBooksCount = $result['borrowed_books'];
 			</div>
 			<!-- INFO DATA -->		
 						
-
-
 	<div class="data">
 		<div class="container">
 			<div class="table-wrapper">
@@ -154,28 +166,43 @@ $borrowedBooksCount = $result['borrowed_books'];
 									</tr>
 								</thead>
 								<tbody>
-									<?php
-									// Include the database connection
-									include('db_connect.php');
-									// Fetch all books from tbl_bookinfo
-									$stmt = $pdo->query("SELECT id, bookname, author, 
-										CASE 
-											WHEN isinuse = 1 THEN 'Borrowed' 
-											ELSE 'On Shelf' 
-										END AS book_status,
-										DATE_FORMAT(issueddate, '%Y-%m-%d') AS formatted_issueddate 
-										FROM tbl_bookinfo");
-									while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-										echo "<tr>
-												<td><a href='book{$row['id']}.php'>" . htmlspecialchars($row['bookname']) . "</a></td>
-												<td>" . htmlspecialchars($row['author']) . "</td>
-												<td>" . $row['book_status'] . "</td>
-												<td>" . $row['id'] . "</td>
-												<td>" . $row['formatted_issueddate'] . "</td>
-											</tr>";
-									}
-									?>
-								</tbody>
+                                    <?php
+                                    // Fetch all books and check who borrowed them
+                                    $stmt = $pdo->query("
+                                        SELECT b.id, b.bookname, b.author, 
+                                            CASE 
+                                                WHEN b.isinuse = 1 THEN 'Borrowed' 
+                                                ELSE 'On Shelf' 
+                                            END AS book_status,
+                                            l.borrowedby,
+                                            DATE_FORMAT(b.issueddate, '%Y-%m-%d') AS formatted_issueddate 
+                                        FROM tbl_bookinfo b
+                                        LEFT JOIN tbl_bookinfo_logs l ON b.bookname = l.bookname AND l.bookisinuse = 1
+                                    ");
+
+                                    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                                        $bookName = htmlspecialchars($row['bookname']);
+                                        $author = htmlspecialchars($row['author']);
+                                        $bookStatus = $row['book_status'];
+                                        $borrowedBy = $row['borrowedby'];
+                                        $bookId = $row['id'];
+                                        $issueDate = $row['formatted_issueddate'];
+
+                                        echo "<tr>";
+                                        if ($bookStatus === 'Borrowed' && $borrowedBy !== $username) {
+                                            echo "<td><a href='#' class='disabled-book' data-book='$bookName'> $bookName</a></td>";
+                                        } else {
+                                            echo "<td><a href='book{$bookId}.php'>$bookName</a></td>";
+                                        }
+                                        echo "
+                                            <td>$author</td>
+                                            <td>$bookStatus</td>
+                                            <td>$bookId</td>
+                                            <td>$issueDate</td>
+                                        </tr>";
+                                    }
+                                    ?>
+                                </tbody>
 							</table>
 						</div>
 					</div>
@@ -184,8 +211,8 @@ $borrowedBooksCount = $result['borrowed_books'];
 		</div>
 	</div>
 
-		</main>
-		<!-- MAIN -->
+	</main>
+	<!-- MAIN -->
 	</section>
 	<!-- NAVBAR -->
 	</div>
@@ -247,19 +274,42 @@ $borrowedBooksCount = $result['borrowed_books'];
 	</div>
 
 	<script>
-		// Target the "Your Name" input field
-		document.getElementById('borrowerName').addEventListener('focus', function () {
-			// If the field has the placeholder, clear it when focused
-			if (this.value === this.placeholder) {
-				this.value = ''; // Clear the placeholder value
-			}
-		});
+		document.addEventListener('DOMContentLoaded', function () {
+			// Check if the success parameter is in the URL
+			const urlParams = new URLSearchParams(window.location.search);
+			const success = urlParams.get('success');
 
-		// If the field loses focus and is empty, re-add the placeholder
-		document.getElementById('borrowerName').addEventListener('blur', function () {
-			if (this.value === '') {
-				this.value = this.placeholder; // Add the placeholder text back if the user didn't type anything
+			if (success === 'requested') {
+				// Show the pop-up message for a successful request
+				alert("Your request has been successfully sent.");
+
+				// Optional: Clear the success parameter from the URL to prevent repeated alerts
+				history.replaceState(null, null, window.location.pathname);
 			}
+
+			// Open the Borrow Book Modal when the "Borrow Book" button is clicked
+			const borrowBookBtn = document.getElementById("borrowBookBtn");
+			if (borrowBookBtn) {
+				borrowBookBtn.onclick = function () {
+					document.getElementById("borrowBookModal").style.display = "block";
+				};
+			}
+
+			// Close the Borrow Book Modal when the "X" button is clicked
+			const closeBorrowModal = document.getElementById("closeBorrowModal");
+			if (closeBorrowModal) {
+				closeBorrowModal.onclick = function () {
+					document.getElementById("borrowBookModal").style.display = "none";
+				};
+			}
+
+			// Close the Borrow Book Modal if the user clicks anywhere outside the modal content
+			window.onclick = function (event) {
+				const borrowBookModal = document.getElementById("borrowBookModal");
+				if (event.target == borrowBookModal) {
+					borrowBookModal.style.display = "none";
+				}
+			};
 		});
 	</script>
 
@@ -272,52 +322,33 @@ $borrowedBooksCount = $result['borrowed_books'];
 			<form id="returnForm" action="ReturnBook.php" method="POST">
 				<label for="bookname">Select Book to Return:</label>
 				<select name="bookname" required>
+					<option value="" disabled selected>Select a book</option> <!-- Placeholder option -->
 					<?php
-					// Ensure user ID is set correctly
+					// Corrected query to fetch books borrowed by the current user
 					$stmt = $pdo->prepare("
 						SELECT b.bookname, b.author, l.id
 						FROM tbl_bookinfo_logs l
 						JOIN tbl_bookinfo b ON b.bookname = l.bookname
-						WHERE l.bookisinuse = 1 AND l.requestby = :userId");
+						WHERE l.bookisinuse = 1 AND l.borrowedby = :borrowedby
+					");
 
-					$stmt->execute(['userId' => $userId]); // Bind userId correctly
+					// Pass the username if `borrowedby` stores usernames
+					$stmt->execute(['borrowedby' => $userData['username']]);
 
-					// Check if any books are found
+					// Populate dropdown with borrowed books
 					while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 						echo "<option value='{$row['bookname']}'>{$row['bookname']} by {$row['author']}</option>";
 					}
 					?>
 				</select>
-				
+
 				<label for="username">Your Name:</label>
-				<input type="text" name="username" value="<?php echo $userData['username']; ?>" readonly>
+				<input type="text" name="username" value="<?php echo htmlspecialchars($userData['username']); ?>" readonly>
 				
 				<button type="submit" name="submitReturn" class="submit-btn" id="uploadButton">Submit Return</button>
 			</form>
 		</div>
 	</div>
-
-
-
-    <script>
-		// Open the Borrow Book Modal when the "Borrow Book" button is clicked
-		document.getElementById("borrowBookBtn").onclick = function() {
-			document.getElementById("borrowBookModal").style.display = "block";
-		};
-
-		// Close the Borrow Book Modal when the "X" button is clicked
-		document.getElementById("closeBorrowModal").onclick = function() {
-			document.getElementById("borrowBookModal").style.display = "none";
-		};
-
-		// Close the Borrow Book Modal if the user clicks anywhere outside the modal content
-		window.onclick = function(event) {
-			const borrowBookModal = document.getElementById("borrowBookModal");
-			if (event.target == borrowBookModal) {
-				borrowBookModal.style.display = "none";
-			}
-		};
-	</script>
 
 	<script>
 		// Open the Return Book Modal when the "Return a Book" button is clicked
@@ -337,9 +368,52 @@ $borrowedBooksCount = $result['borrowed_books'];
 				returnBookModal.style.display = "none";
 			}
 		};
-	</script>
-	
 
+		// Show pop-up message based on the return outcome
+		document.addEventListener("DOMContentLoaded", function () {
+			const urlParams = new URLSearchParams(window.location.search);
+
+			if (urlParams.has('success')) {
+				alert("Your book has been successfully returned!");
+				// Optionally, clear the success parameter from the URL
+				history.replaceState(null, null, window.location.pathname);
+			}
+
+			if (urlParams.has('error')) {
+				const errorType = urlParams.get('error');
+				let errorMessage = "An error occurred.";
+
+				switch (errorType) {
+					case 'book_not_selected':
+						errorMessage = "Please select a book to return.";
+						break;
+					case 'book_not_found':
+						errorMessage = "The book was not found in your borrowed list.";
+						break;
+					case 'return_failed':
+						errorMessage = "An error occurred while returning the book.";
+						break;
+				}
+
+				alert(errorMessage);
+				// Optionally, clear the error parameter from the URL
+				history.replaceState(null, null, window.location.pathname);
+			}
+		});
+	</script>
+
+	<script>
+		document.addEventListener("DOMContentLoaded", () => {
+			// Add click event to links for borrowed books
+			document.querySelectorAll(".disabled-book").forEach(link => {
+				link.addEventListener("click", (event) => {
+					const bookName = link.getAttribute("data-book");
+					alert(`The book "${bookName}" is currently borrowed and cannot be accessed.`);
+					event.preventDefault(); // Prevent default link behavior
+				});
+			});
+		});
+	</script>
 
 	<script src="dashboard.js"></script>
 	<script src="search.js"></script>

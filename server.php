@@ -1,6 +1,9 @@
 <?php
 session_start();
 include 'function.php';
+include('db_connect.php');
+
+
 
 // Database connection
 $host = 'localhost'; // Your database host
@@ -212,20 +215,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
     $insertUser->close();
 }
-
-// UPDATE PROFILE ERROR HANDLING
+// Profile Update Logic
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update_profile') {
-    // Collect form data
-    $username = $_POST['username'];
-    $full_name = $_POST['full_name'];
-    $email = $_POST['email'];
-    $department = $_POST['department'];
+    $username = trim($_POST['username']);
+    $full_name = trim($_POST['full_name']);
+    $email = filter_var(trim($_POST['email']), FILTER_VALIDATE_EMAIL);
+    $department = trim($_POST['department']);
     $new_password = $_POST['new_password'];
 
-    // Validation for empty fields
-    if (empty($username) || empty($full_name) || empty($email) || empty($department)) {
-        $_SESSION['error_message'] = 'Please fill in all required fields.';
-        $_SESSION['userData'] = $_POST; // Store form data in session for repopulation
+    // Validate required fields
+    if (empty($username) || empty($full_name) || !$email || empty($department)) {
+        $_SESSION['error_message'] = 'Please fill in all required fields with valid data.';
+        $_SESSION['userData'] = $_POST;
         header('Location: profile.php');
         exit();
     }
@@ -233,58 +234,63 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     // Validate department
     $validDepartments = ['BSPT', 'BSOT', 'BSES', 'BSCS', 'BSIT', 'BSEE', 'BSCpE', 'BSCE', 'BSME', 'BSIE', 'BEE', 'BSCHE', 'BSED'];
     if (!in_array($department, $validDepartments)) {
-        $_SESSION['error_message'] = 'Invalid department. Please choose a valid department.';
-        $_SESSION['userData'] = $_POST; // Store form data in session
+        $_SESSION['error_message'] = 'Invalid department selected.';
+        $_SESSION['userData'] = $_POST;
         header('Location: profile.php');
         exit();
     }
 
-    // Check if the username or email already exists
-    $stmt = $pdo->prepare("SELECT * FROM tbl_userinfo WHERE username = :username AND id != :userId");
-    $stmt->execute(['username' => $username, 'userId' => $_SESSION['user_id']]);
+    // Check for username and email uniqueness
+    $checkQuery = "SELECT id FROM tbl_userinfo WHERE (username = :username OR email = :email) AND id != :userId";
+    $stmt = $pdo->prepare($checkQuery);
+    $stmt->execute([':username' => $username, ':email' => $email, ':userId' => $_SESSION['user_id']]);
     if ($stmt->rowCount() > 0) {
-        $_SESSION['error_message'] = 'Username already exists.';
-        $_SESSION['userData'] = $_POST; // Store form data in session
+        $_SESSION['error_message'] = 'Username or email already exists.';
+        $_SESSION['userData'] = $_POST;
         header('Location: profile.php');
         exit();
     }
 
-    $stmt = $pdo->prepare("SELECT * FROM tbl_userinfo WHERE email = :email AND id != :userId");
-    $stmt->execute(['email' => $email, 'userId' => $_SESSION['user_id']]);
-    if ($stmt->rowCount() > 0) {
-        $_SESSION['error_message'] = 'Email already exists.';
-        $_SESSION['userData'] = $_POST; // Store form data in session
-        header('Location: profile.php');
-        exit();
-    }
+    // Handle password update
+    $updatePassword = '';
+    $params = [
+        ':username' => $username,
+        ':full_name' => $full_name,
+        ':email' => $email,
+        ':department' => $department,
+        ':userId' => $_SESSION['user_id']
+    ];
 
-    // If no errors, update the profile
-    if (empty($new_password)) {
-        $stmt = $pdo->prepare("UPDATE tbl_userinfo SET username = :username, full_name = :full_name, email = :email, department = :department WHERE id = :userId");
-        $stmt->bindParam(':username', $username);
-        $stmt->bindParam(':full_name', $full_name);
-        $stmt->bindParam(':email', $email);
-        $stmt->bindParam(':department', $department);
-    } else {
+    if (!empty($new_password)) {
         $hashedPassword = password_hash($new_password, PASSWORD_BCRYPT);
-        $stmt = $pdo->prepare("UPDATE tbl_userinfo SET username = :username, full_name = :full_name, email = :email, department = :department, password = :password WHERE id = :userId");
-        $stmt->bindParam(':password', $hashedPassword);
-        $stmt->bindParam(':username', $username);
-        $stmt->bindParam(':full_name', $full_name);
-        $stmt->bindParam(':email', $email);
-        $stmt->bindParam(':department', $department);
+        $updatePassword = ", password = :password";
+        $params[':password'] = $hashedPassword;
     }
 
-    $stmt->bindParam(':userId', $_SESSION['user_id']);
-    if ($stmt->execute()) {
-        $_SESSION['success_message'] = 'Profile updated successfully!';
-        header('Location: profile.php');
-        exit();
-    } else {
-        $_SESSION['error_message'] = 'Error updating profile. Please try again later.';
-        header('Location: profile.php');
-        exit();
+    // Update the profile
+    $updateQuery = "UPDATE tbl_userinfo 
+                    SET username = :username, 
+                        full_name = :full_name, 
+                        email = :email, 
+                        department = :department 
+                        $updatePassword 
+                    WHERE id = :userId";
+
+    try {
+        $stmt = $pdo->prepare($updateQuery);
+        if ($stmt->execute($params)) {
+            $_SESSION['success_message'] = 'Profile updated successfully.';
+        } else {
+            $_SESSION['error_message'] = 'Failed to update profile.';
+        }
+    } catch (PDOException $e) {
+        $_SESSION['error_message'] = 'Database error: ' . $e->getMessage();
     }
+
+    // Redirect back to profile page
+    header('Location: profile.php');
+    exit();
 }
+
 
 ?>

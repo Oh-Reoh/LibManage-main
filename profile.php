@@ -24,58 +24,10 @@ $userData = $stmt->fetch(PDO::FETCH_ASSOC);
 // If no profile picture exists, fallback to a default picture
 $profilePic = !empty($userData['profile_picture']) ? $userData['profile_picture'] : 'images/default.jpg';
 
-// Check if there's an error message in session
+// Check if there's an error or success message in session
 $errorMessage = isset($_SESSION['error_message']) ? $_SESSION['error_message'] : '';
-unset($_SESSION['error_message']); // Clear error message after it is used
-
-// Handle form submission to update the profile
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
-    // Collect form data
-    $username = htmlspecialchars($_POST['username']);
-    $full_name = htmlspecialchars($_POST['full_name']);
-    $email = htmlspecialchars($_POST['email']);
-    $department = htmlspecialchars($_POST['department']);
-    $new_password = $_POST['new_password'];
-
-    // Call server.php for validation and error handling
-    include 'server.php';
-
-    // If validation succeeds, proceed with updating the profile
-    if (isset($_SESSION['success_message'])) {
-        // If the password is valid and department is valid, proceed with updating profile
-        if (empty($new_password)) {
-            // If no password provided, do not update password
-            $updateQuery = "UPDATE tbl_userinfo SET username = :username, full_name = :full_name, email = :email, department = :department WHERE id = :userId";
-            $stmt = $pdo->prepare($updateQuery);
-        } else {
-            // If new password provided, hash it and update
-            $hashedPassword = password_hash($new_password, PASSWORD_BCRYPT);
-            $updateQuery = "UPDATE tbl_userinfo SET username = :username, full_name = :full_name, email = :email, department = :department, password = :password WHERE id = :userId";
-            $stmt = $pdo->prepare($updateQuery);
-            $stmt->bindParam(':password', $hashedPassword);
-        }
-
-        $stmt->bindParam(':username', $username);
-        $stmt->bindParam(':full_name', $full_name);
-        $stmt->bindParam(':email', $email);
-        $stmt->bindParam(':department', $department);
-        $stmt->bindParam(':userId', $userId);
-
-        if ($stmt->execute()) {
-            $_SESSION['success_message'] = 'Profile updated successfully!';
-            header('Location: profile.php');
-            exit();
-        } else {
-            $_SESSION['error_message'] = 'Error updating profile. Please try again later.';
-            header('Location: profile.php'); // Redirect back to profile page on error
-            exit();
-        }
-    } else {
-        // If there were validation errors, redirect back to the profile page with error messages
-        header('Location: profile.php');
-        exit();
-    }
-}
+$successMessage = isset($_SESSION['success_message']) ? $_SESSION['success_message'] : '';
+unset($_SESSION['error_message'], $_SESSION['success_message']); // Clear messages
 ?>
 
 
@@ -90,6 +42,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
     <link rel="stylesheet" href="search.css">
     <link rel="stylesheet" href="pop-up_add.css">
     <title>User Profile</title>
+    <style>
+        .popup-message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #4caf50; /* Green for success */
+            color: white;
+            padding: 15px 20px;
+            border-radius: 5px;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            font-size: 16px;
+            display: none;
+        }
+
+        .popup-message.error {
+            background-color: #f44336; /* Red for errors */
+        }
+    </style>
 </head>
 <body>
     <div class="dboard_content">
@@ -171,7 +142,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
                 </div>
 
                 <div class="footer-center">
-                    <p>&copy; 2024</p>
+                    <p>&copy; ALPHA ONE 2024</p>
                 </div>
 
                 <div class="footer-right">
@@ -190,34 +161,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
             </div>
         </footer>
     </div>
+    <!-- Display error or success messages -->    
+    <?php if ($successMessage): ?>
+        <div class="popup-message" id="successPopup"><?php echo $successMessage; ?></div>
+    <?php elseif ($errorMessage): ?>
+        <div class="popup-message error" id="errorPopup"><?php echo $errorMessage; ?></div>
+    <?php endif; ?>
 
     <!-- Modal for updating profile information -->
     <div id="updateProfileModal" class="modal" style="display:none;">
         <div class="modal-content">
             <span class="close-modal-btn">&times;</span>
             <h2>Update Profile</h2>
-            <form action="server.php" method="POST" enctype="multipart/form-data">
-                <input type="hidden" name="action" value="update_profile">
-
-                <!-- Display any error messages if they exist -->
-                <?php if (isset($_SESSION['error_message'])): ?>
-                    <div class="error-message">
-                        <p><?php echo $_SESSION['error_message']; ?></p>
-                    </div>
-                    <?php unset($_SESSION['error_message']); ?>
-                <?php endif; ?>
-
+            <form action="updateProfile.php" method="POST" enctype="multipart/form-data">
                 <label for="username">Username:</label>
-                <input type="text" id="username" name="username" value="<?php echo isset($_SESSION['userData']['username']) ? htmlspecialchars($_SESSION['userData']['username']) : htmlspecialchars($userData['username']); ?>" required>
+                <input type="text" id="username" name="username" value="<?php echo htmlspecialchars($userData['username']); ?>" required>
 
                 <label for="full_name">Full Name:</label>
-                <input type="text" id="full_name" name="full_name" value="<?php echo isset($_SESSION['userData']['full_name']) ? htmlspecialchars($_SESSION['userData']['full_name']) : htmlspecialchars($userData['full_name']); ?>" required>
+                <input type="text" id="full_name" name="full_name" value="<?php echo htmlspecialchars($userData['full_name']); ?>" required>
 
                 <label for="email">Email:</label>
-                <input type="email" id="email" name="email" value="<?php echo isset($_SESSION['userData']['email']) ? htmlspecialchars($_SESSION['userData']['email']) : htmlspecialchars($userData['email']); ?>" required>
+                <input type="email" id="email" name="email" value="<?php echo htmlspecialchars($userData['email']); ?>" required>
 
                 <label for="department">Department:</label>
-                <input type="text" id="department" name="department" value="<?php echo isset($_SESSION['userData']['department']) ? htmlspecialchars($_SESSION['userData']['department']) : htmlspecialchars($userData['department']); ?>" required>
+                <input type="text" id="department" name="department" value="<?php echo htmlspecialchars($userData['department']); ?>" required>
 
                 <label for="profile_picture">Profile Picture:</label>
                 <input type="file" id="profile_picture" name="profile_picture">
@@ -232,9 +199,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
         </div>
     </div>
 
-
+    <!-- Add scripts for modal and pop-up -->
     <script>
         document.addEventListener("DOMContentLoaded", () => {
+            // Modal functionality
             const updateProfileModal = document.getElementById("updateProfileModal");
             const openUpdateProfileModal = document.getElementById("openUpdateProfileModal");
             const closeModalBtn = document.querySelector(".close-modal-btn");
@@ -253,11 +221,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
                         updateProfileModal.style.display = "none";
                     }
                 });
-            } else {
-                console.error("Modal elements not found! Please check if the modal and buttons are correctly referenced.");
             }
         });
     </script>
+
+    <script>
+        // Handle pop-up messages
+        document.addEventListener("DOMContentLoaded", function() {
+            const successPopup = document.getElementById("successPopup");
+            const errorPopup = document.getElementById("errorPopup");
+
+            if (successPopup) {
+                successPopup.style.display = "block";
+                setTimeout(() => {
+                    successPopup.style.display = "none";
+                }, 3000); // Auto-hide after 3 seconds
+            }
+
+            if (errorPopup) {
+                errorPopup.style.display = "block";
+                setTimeout(() => {
+                    errorPopup.style.display = "none";
+                }, 3000); // Auto-hide after 3 seconds
+            }
+        });
+    </script>   
+
 
     <script src="dashboard.js"></script>
     <script src="search.js"></script>

@@ -9,14 +9,29 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'regular') {
 }
 
 $userId = $_SESSION['user_id'];
-$bookName = $_POST['bookname'];
+$bookName = isset($_POST['bookname']) ? trim($_POST['bookname']) : null;
+
+if (empty($bookName)) {
+    header("Location: Dashboard(Reader).php?error=book_not_selected");
+    exit();
+}
+
+// Fetch the username of the logged-in user
+$queryUser = "SELECT username FROM tbl_userinfo WHERE id = :userId";
+$stmtUser = $pdo->prepare($queryUser);
+$stmtUser->execute(['userId' => $userId]);
+$userData = $stmtUser->fetch(PDO::FETCH_ASSOC);
+$username = $userData['username'];
 
 try {
     // Fetch book log data for the logged-in user
     $query = "SELECT id, issueddate FROM tbl_bookinfo_logs 
               WHERE bookname = :bookname AND borrowedby = :borrowedby AND bookisinuse = 1";
     $stmt = $pdo->prepare($query);
-    $stmt->execute(['bookname' => $bookName, 'borrowedby' => $userId]);
+    $stmt->execute([
+        'bookname' => $bookName,
+        'borrowedby' => $username // Use username or userId based on your database
+    ]);
     $logData = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if ($logData) {
@@ -34,7 +49,7 @@ try {
         $stmtUpdate = $pdo->prepare($updateLog);
         $stmtUpdate->execute([
             'returndate' => $returnDate,
-            'returnedby' => $userId,
+            'returnedby' => $username,
             'islate' => $isLate,
             'logid' => $logId
         ]);
@@ -48,7 +63,8 @@ try {
         header("Location: Dashboard(Reader).php?success=return_successful");
         exit();
     } else {
-        // If no matching log is found
+        // Debugging for missing book
+        error_log("Return failed: Book not found. Book Name: $bookName, User ID: $userId, BorrowedBy: $username");
         header("Location: Dashboard(Reader).php?error=book_not_found");
         exit();
     }
@@ -57,4 +73,3 @@ try {
     header("Location: Dashboard(Reader).php?error=return_failed");
     exit();
 }
-?>

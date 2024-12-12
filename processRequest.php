@@ -4,32 +4,44 @@ include('db_connect.php');
 
 // Ensure only librarians can process requests
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'librarian') {
-    header("Location: Dashboard(Reader).php");
+    echo "<script>
+        alert('You\'re not supposed to be here...');
+        window.location.href = 'LoginPage.php';
+    </script>";
     exit();
 }
 
-// Handle Accept Request
-if (isset($_POST['accept'])) {
-    $requestId = $_POST['accept'];
+// Handle Accept or Deny Request
+if (isset($_POST['accept']) || isset($_POST['deny'])) {
+    $action = isset($_POST['accept']) ? 'accept' : 'deny';
+    $requestId = $_POST[$action];
 
     try {
+        // Fetch request details
         $query = "SELECT bookname, requestby FROM tbl_bookinfo_logs WHERE id = :requestId";
         $stmt = $pdo->prepare($query);
         $stmt->execute(['requestId' => $requestId]);
         $requestData = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if ($requestData) {
-            $bookName = $requestData['bookname'];
-            $borrowedBy = $requestData['requestby'];
-            $issuedDate = date('Y-m-d');
+        if (!$requestData) {
+            throw new Exception('Request not found.');
+        }
+
+        $bookName = $requestData['bookname'];
+        $borrowedBy = $requestData['requestby'];
+
+        if ($action === 'accept') {
+            $issuedDate = date('Y-m-d'); // Current date
+            $returnDate = date('Y-m-d', strtotime('+1 week')); // Return date is 1 week from today
 
             // Update the log as accepted
             $updateLogQuery = "UPDATE tbl_bookinfo_logs 
-                               SET isrequest = 0, bookisinuse = 1, issueddate = :issuedDate, borrowedby = :borrowedBy 
+                               SET isrequest = 0, bookisinuse = 1, issueddate = :issuedDate, returndate = :returnDate, borrowedby = :borrowedBy 
                                WHERE id = :requestId";
             $stmtUpdateLog = $pdo->prepare($updateLogQuery);
             $stmtUpdateLog->execute([
                 'issuedDate' => $issuedDate,
+                'returnDate' => $returnDate,
                 'borrowedBy' => $borrowedBy,
                 'requestId' => $requestId
             ]);
@@ -41,56 +53,24 @@ if (isset($_POST['accept'])) {
             $stmtUpdateBook = $pdo->prepare($updateBookQuery);
             $stmtUpdateBook->execute(['bookName' => $bookName]);
 
-            header("Location: Reader'sRequest(Librarian).php?success=accepted");
-            exit();
+            echo json_encode(['success' => true, 'message' => 'Request accepted', 'id' => $requestId]);
+        } elseif ($action === 'deny') {
+            // Mark the request as denied
+            $updateLogQuery = "UPDATE tbl_bookinfo_logs 
+                               SET isrequest = 3 
+                               WHERE id = :requestId";
+            $stmtUpdateLog = $pdo->prepare($updateLogQuery);
+            $stmtUpdateLog->execute(['requestId' => $requestId]);
+
+            echo json_encode(['success' => true, 'message' => 'Request denied', 'id' => $requestId]);
         }
-    } catch (PDOException $e) {
+    } catch (Exception $e) {
         error_log($e->getMessage());
-        header("Location: Reader'sRequest(Librarian).php?error=accept_failed");
-        exit();
+        echo json_encode(['success' => false, 'message' => 'Action failed', 'id' => $requestId]);
     }
+    exit();
 }
 
-if (isset($_POST['deny'])) {
-    $requestId = $_POST['deny'];
-
-    try {
-        // Mark the request as denied
-        $updateLogQuery = "UPDATE tbl_bookinfo_logs 
-                           SET isrequest = 3 
-                           WHERE id = :requestId";
-        $stmtUpdateLog = $pdo->prepare($updateLogQuery);
-        $stmtUpdateLog->execute(['requestId' => $requestId]);
-
-        header("Location: Reader'sRequest(Librarian).php?success=denied");
-        exit();
-    } catch (PDOException $e) {
-        error_log($e->getMessage());
-        header("Location: Reader'sRequest(Librarian).php?error=deny_failed");
-        exit();
-    }
-}
-
-// Handle Deny Request
-if (isset($_POST['deny'])) {
-    $requestId = $_POST['deny'];
-
-    try {
-        // Mark the request as denied
-        $updateLogQuery = "UPDATE tbl_bookinfo_logs 
-                           SET isrequest = 3 
-                           WHERE id = :requestId";
-        $stmtUpdateLog = $pdo->prepare($updateLogQuery);
-        $stmtUpdateLog->execute(['requestId' => $requestId]);
-
-        echo json_encode(['success' => true, 'message' => 'Request denied', 'id' => $requestId]);
-        exit();
-    } catch (PDOException $e) {
-        error_log($e->getMessage());
-        echo json_encode(['success' => false, 'message' => 'Request denial failed']);
-        exit();
-    }
-}
 
 // Handle Return Book
 if (isset($_POST['return'])) {

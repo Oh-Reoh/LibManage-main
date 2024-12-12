@@ -1,106 +1,128 @@
 <?php
 session_start();
-include('db_connect.php'); // Include the PDO connection
+include('db_connect.php');
 
-// Check if user is logged in and session is set
+// Check if the user is logged in
 if (!isset($_SESSION['user_id'])) {
     header("Location: LoginPage.php");
     exit();
 }
 
-// Get user ID from session
-$userId = $_SESSION['user_id']; // This will fetch the logged-in user's ID
+$userId = $_SESSION['user_id']; // Get the logged-in user's ID
 
-// Check if the form is submitted
-if (isset($_POST['update_profile'])) {
-    // Retrieve the form data
-    $username = $_POST['username'];
-    $full_name = $_POST['full_name'];
-    $email = $_POST['email'];
-    $department = $_POST['department'];
-    $new_password = $_POST['new_password']; // New password (if entered)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
+    // Sanitize and validate input
+    $username = htmlspecialchars(trim($_POST['username']));
+    $full_name = htmlspecialchars(trim($_POST['full_name']));
+    $email = filter_var($_POST['email'], FILTER_SANITIZE_EMAIL);
+    $department = htmlspecialchars(trim($_POST['department']));
+    $new_password = !empty($_POST['new_password']) ? trim($_POST['new_password']) : null;
 
-    // Fetch current user data from the database for profile picture handling
+    // Validate email format
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $_SESSION['error_message'] = "Invalid email format.";
+        header("Location: profile.php");
+        exit();
+    }
+
+    // Validate password length (if provided)
+    if ($new_password && strlen($new_password) < 6) {
+        $_SESSION['error_message'] = "Password must be at least 6 characters long.";
+        header("Location: profile.php");
+        exit();
+    }
+
+    // Fetch current profile picture
     $query = "SELECT profile_picture FROM tbl_userinfo WHERE id = :userId";
     $stmt = $pdo->prepare($query);
     $stmt->execute(['userId' => $userId]);
     $userData = $stmt->fetch(PDO::FETCH_ASSOC);
+    $profilePicture = $userData['profile_picture'];
 
-    // Handle profile picture upload
-    $profilePicture = $userData['profile_picture']; // Default to current profile picture
+    // Handle file upload for profile picture
+    if (isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] === UPLOAD_ERR_OK) {
+        $allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+        $maxFileSize = 50 * 1024 * 1024; // 50 MB
+        $fileTmpName = $_FILES['profile_picture']['tmp_name'];
+        $fileType = mime_content_type($fileTmpName);
+        $fileSize = $_FILES['profile_picture']['size'];
 
-    if ($_FILES['profile_picture']['name']) {
-        // Get file extension and generate a unique name
-        $fileExtension = pathinfo($_FILES['profile_picture']['name'], PATHINFO_EXTENSION);
-        $fileName = uniqid() . '.' . $fileExtension;  // Unique file name
+        // Validate file type
+        if (!in_array($fileType, $allowedTypes)) {
+            $_SESSION['error_message'] = "Invalid file type. Only JPEG, PNG, or GIF files are allowed.";
+            header("Location: profile.php");
+            exit();
+        }
+
+        // Validate file size
+        if ($fileSize > $maxFileSize) {
+            $_SESSION['error_message'] = "File size exceeds the 50 MB limit.";
+            header("Location: profile.php");
+            exit();
+        }
 
         // Define target directory
-        $targetDirectory = "profilePictures/" . $fileName; // Path where the file will be stored
-
-        // Check if the profilePictures directory exists, create it if not
-        if (!is_dir('profilePictures')) {
-            // Attempt to create the directory if it doesn't exist
-            if (!mkdir('profilePictures', 0755, true)) {
-                die('Failed to create profilePictures directory. Please check permissions.');
-            }
+        $targetDir = "profilePictures/";
+        if (!is_dir($targetDir)) {
+            mkdir($targetDir, 0777, true);
         }
 
-        // Move the uploaded file to the target directory
-        if (move_uploaded_file($_FILES['profile_picture']['tmp_name'], $targetDirectory)) {
-            // File uploaded successfully
-            $profilePicture = $targetDirectory; // Update profile picture path
+        $fileName = uniqid() . "_" . basename($_FILES['profile_picture']['name']);
+        $targetFilePath = $targetDir . $fileName;
+
+        // Move uploaded file
+        if (move_uploaded_file($fileTmpName, $targetFilePath)) {
+            $profilePicture = $targetFilePath; // Update profile picture path
         } else {
-            // Handle errors (file not uploaded)
-            $profilePicture = $userData['profile_picture']; // Keep old picture if upload fails
+            $_SESSION['error_message'] = "Failed to upload the profile picture.";
+            header("Location: profile.php");
+            exit();
         }
     }
 
-    // Handle password change (optional)
-    if (!empty($new_password)) {
-        // Hash the new password
+    // Prepare SQL query to update user profile
+    $updateQuery = "UPDATE tbl_userinfo 
+                    SET username = :username, 
+                        full_name = :full_name, 
+                        email = :email, 
+                        department = :department, 
+                        profile_picture = :profile_picture";
+
+    $params = [
+        ':username' => $username,
+        ':full_name' => $full_name,
+        ':email' => $email,
+        ':department' => $department,
+        ':profile_picture' => $profilePicture,
+    ];
+
+    // Include password in the update query if provided
+    if ($new_password) {
         $hashedPassword = password_hash($new_password, PASSWORD_BCRYPT);
-        // Update query with password change
-        $query = "UPDATE tbl_userinfo SET 
-                    username = :username, 
-                    full_name = :full_name,
-                    email = :email, 
-                    department = :department, 
-                    profile_picture = :profile_picture, 
-                    password = :password 
-                  WHERE id = :id";
-        $stmt = $pdo->prepare($query);
-        $stmt->bindParam(':password', $hashedPassword);
-    } else {
-        // If no password change, exclude password from the update
-        $query = "UPDATE tbl_userinfo SET 
-                    username = :username, 
-                    full_name = :full_name,
-                    email = :email, 
-                    department = :department, 
-                    profile_picture = :profile_picture 
-                  WHERE id = :id";
-        $stmt = $pdo->prepare($query);
+        $updateQuery .= ", password = :password";
+        $params[':password'] = $hashedPassword;
     }
 
-    // Bind the remaining parameters and execute the update query
-    $stmt->bindParam(':username', $username);
-    $stmt->bindParam(':full_name', $full_name);
-    $stmt->bindParam(':email', $email);
-    $stmt->bindParam(':department', $department);
-    $stmt->bindParam(':profile_picture', $profilePicture);
-    $stmt->bindParam(':id', $userId);
+    $updateQuery .= " WHERE id = :userId";
+    $params[':userId'] = $userId;
 
-    // Execute the query
+    // Execute the update query
     try {
-        if ($stmt->execute()) {
-            // If successful, redirect to profile.php to show updated information
-            header("Location: profile.php"); // Proper redirection
+        $stmt = $pdo->prepare($updateQuery);
+        if ($stmt->execute($params)) {
+            $_SESSION['success_message'] = "Profile updated successfully!";
+            header("Location: profile.php");
             exit();
         } else {
-            echo "Error updating profile.";
+            $_SESSION['error_message'] = "Failed to update the profile.";
+            header("Location: profile.php");
+            exit();
         }
     } catch (PDOException $e) {
-        echo "Error: " . $e->getMessage();
+        error_log("Database Error: " . $e->getMessage());
+        $_SESSION['error_message'] = "An error occurred. Please try again.";
+        header("Location: profile.php");
+        exit();
     }
 }
 ?>

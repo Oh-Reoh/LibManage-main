@@ -146,48 +146,56 @@ $stmt = $pdo->query($query);
 							</tr>
 						</thead>
 						<tbody>
-							<?php while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) { ?>
-								<tr data-id="<?php echo $row['id']; ?>">
-									<td><?php echo htmlspecialchars($row['bookname']); ?></td>
-									<td><?php echo htmlspecialchars($row['author']); ?></td>
-									<td><?php echo htmlspecialchars($row['requestby']); ?></td>
-									<td>
-										<?php
-										// Determine the dynamic status
-										switch ($row['isrequest']) {
-											case 1:
-												echo "Pending";
-												break;
-											case 0:
-												echo "Accepted";
-												break;
-											case 3:
-												echo "Denied";
-												break;
-											default:
-												echo "Unknown";
-												break;
-										}
-										?>
-									</td>
-									<td>
-										<?php if ($row['isrequest'] == 1) { // Show actions only for pending requests ?>
-											<form method="POST" action="processRequest.php">
-												<button type="submit" name="accept" value="<?php echo $row['id']; ?>">Accept</button>
-												<button type="submit" name="deny" value="<?php echo $row['id']; ?>">Deny</button>
-											</form>
-										<?php } else { ?>
-											No Actions Available
-										<?php } ?>
-									</td>
+							<?php if ($stmt->rowCount() > 0): ?>
+								<?php while ($row = $stmt->fetch(PDO::FETCH_ASSOC)): ?>
+									<tr data-id="<?php echo htmlspecialchars($row['id']); ?>">
+										<td><?php echo htmlspecialchars($row['bookname']); ?></td>
+										<td><?php echo htmlspecialchars($row['author']); ?></td>
+										<td><?php echo htmlspecialchars($row['requestby']); ?></td>
+										<td>
+											<?php
+											// Determine the dynamic status
+											switch ($row['isrequest']) {
+												case 1:
+													echo "Pending";
+													break;
+												case 0:
+													echo "Accepted";
+													break;
+												case 3:
+													echo "Denied";
+													break;
+												default:
+													echo "Unknown";
+													break;
+											}
+											?>
+										</td>
+										<td>
+											<?php if ($row['isrequest'] == 1): ?>
+												<form method="POST" action="processRequest.php">
+													<button type="submit" name="accept" value="<?php echo htmlspecialchars($row['id']); ?>">Accept</button>
+													<button type="submit" name="deny" value="<?php echo htmlspecialchars($row['id']); ?>">Deny</button>
+												</form>
+											<?php else: ?>
+												No Actions Available
+											<?php endif; ?>
+										</td>
+									</tr>
+								<?php endwhile; ?>
+							<?php else: ?>
+								<tr>
+									<td colspan="5">No pending book requests found.</td>
 								</tr>
-							<?php } ?>
+							<?php endif; ?>
 						</tbody>
 					</table>
 				</div>
 			</div>
+			
+			<!-- BOOKS DATA -->
 
-			<!-- BOOKS DATA -->	
+			<h1 class="title">Book Request/Return History</h1>	
 			<div class="data">
 				<div class="container">
 					<div class="table-wrapper">

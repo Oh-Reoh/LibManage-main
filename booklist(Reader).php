@@ -34,15 +34,19 @@ $userData = $stmt->fetch(PDO::FETCH_ASSOC);
 // If no profile picture exists, fallback to a default picture
 $profilePic = !empty($userData['profile_picture']) ? $userData['profile_picture'] : 'images/default.jpg';
 
-// Fetch all books from tbl_bookinfo
-$stmt = $pdo->query("SELECT id, bookname, author, 
-    CASE 
-        WHEN isinuse = 1 THEN 'Borrowed' 
-        ELSE 'On Shelf' 
-    END AS book_status,
-    DATE_FORMAT(issueddate, '%Y-%m-%d') AS formatted_issueddate,
-    publishYear, description
-    FROM tbl_bookinfo");
+// Fetch all books and their current status
+$stmt = $pdo->query("
+    SELECT b.id, b.bookname, b.author, 
+           CASE 
+               WHEN b.isinuse = 1 THEN 'Borrowed' 
+               ELSE 'On Shelf' 
+           END AS book_status,
+           l.borrowedby,
+           DATE_FORMAT(b.issueddate, '%Y-%m-%d') AS formatted_issueddate
+    FROM tbl_bookinfo b
+    LEFT JOIN tbl_bookinfo_logs l ON b.bookname = l.bookname AND l.bookisinuse = 1
+");
+
 ?>
 
 <!DOCTYPE html>
@@ -57,6 +61,16 @@ $stmt = $pdo->query("SELECT id, bookname, author,
     <link rel="stylesheet" href="pop-up_add.css">
 	<link rel="stylesheet" href="search.css">
 	<title>Books for Reader</title>
+	<style>
+        .disabled-book {
+            color: gray;
+            text-decoration: none;
+            cursor: not-allowed;
+        }
+        .disabled-book:hover {
+            text-decoration: underline;
+        }
+    </style>
 </head>
 <body>
 
@@ -130,13 +144,27 @@ $stmt = $pdo->query("SELECT id, bookname, author,
 							<tbody>
 								<?php
 								while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-									echo "<tr>
-											<td><a href='book" . $row['id'] . ".php'>" . htmlspecialchars($row['bookname']) . "</a></td>
-											<td>" . htmlspecialchars($row['author']) . "</td>
-											<td>" . $row['book_status'] . "</td>
-											<td>" . $row['id'] . "</td>
-											<td>" . $row['formatted_issueddate'] . "</td>
-										</tr>";
+									$bookName = htmlspecialchars($row['bookname']);
+									$author = htmlspecialchars($row['author']);
+									$bookStatus = $row['book_status'];
+									$borrowedBy = $row['borrowedby'];
+									$bookId = $row['id'];
+									$issueDate = $row['formatted_issueddate'];
+
+									echo "<tr>";
+									if ($bookStatus === 'Borrowed' && $borrowedBy !== $userData['username']) {
+										// If the book is borrowed by someone else, show a disabled link
+										echo "<td><a href='#' class='disabled-book' data-book='$bookName'> $bookName</a></td>";
+									} else {
+										// Allow the logged-in user to access their borrowed books or available books
+										echo "<td><a href='book{$bookId}.php'>$bookName</a></td>";
+									}
+									echo "
+										<td>$author</td>
+										<td>$bookStatus</td>
+										<td>$bookId</td>
+										<td>$issueDate</td>
+									</tr>";
 								}
 								?>
 							</tbody>
@@ -161,7 +189,7 @@ $stmt = $pdo->query("SELECT id, bookname, author,
 			</div>
 
 			<div class="footer-center">
-				<p>&copy; 2024</p>
+				<p>&copy; ALPHA ONE 2024</p>
 			</div>
 
 			<div class="footer-right">
@@ -180,7 +208,19 @@ $stmt = $pdo->query("SELECT id, bookname, author,
 			</div>
 		</div>
 	</footer>
-
+	
+	<!-- Script to disable book links for borrowed books -->
+	<script>
+		document.addEventListener("DOMContentLoaded", () => {
+			document.querySelectorAll(".disabled-book").forEach(link => {
+				link.addEventListener("click", (event) => {
+					const bookName = link.getAttribute("data-book");
+					alert(`The book "${bookName}" is currently borrowed and cannot be accessed.`);
+					event.preventDefault();
+				});
+			});
+		});
+    </script>
 	<script src="booklist(Reader).js"></script>
     <script src="booklist(Librarian).js"></script>
     <script src="search.js"></script>
